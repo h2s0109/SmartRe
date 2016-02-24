@@ -7,7 +7,7 @@ ON CMD COREGTM GOSUB coreGTM
 
 IF (!os.file(~~\Button\Env\Store_window.cmm))
 (
-	MKDIR ~~\Button\Env
+	//MKDIR ~~\Button\Env
 	OPEN #1 ~~\Button\Env\Store_window.cmm /CREATE
 	WRITE #1 "abc"
 	CLOSE #1
@@ -165,7 +165,7 @@ IF "&MODE"=="COMPLEX"
 	(
 		SYSTEM.CONFIG.DEBUGPORTTYPE DAP2
 		SYSTEM.CONFIG.DAP.DAPEN.ON
-		SYSTEM.JC 40MHZ
+		SYSTEM.JC 20MHZ
 	)
 	ELSE IF "&CONNECT_TYPE"=="JTAG"
 	(

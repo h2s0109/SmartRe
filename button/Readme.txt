@@ -12,3 +12,4 @@ V4.1    Simple reprogram is added.(It doesn`t effect to current setting)
 		29X flash bug fixed.
 		Some small bugs are fixed.
 V5.0 	GTM debugging support.
+V6.0 	Easy window system introduced.

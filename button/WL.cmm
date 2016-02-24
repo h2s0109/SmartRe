@@ -1,0 +1,200 @@
+LOCAL &SCRIPT1
+LOCAL &SCRIPT2
+LOCAL &SCRIPT3
+LOCAL &SCRIPT4
+LOCAL &LAST_SEL_SCRIPT
+
+LOCAL &SCRIPT_CHANGE1
+LOCAL &SCRIPT_CHANGE2
+LOCAL &SCRIPT_CHANGE3
+LOCAL &SCRIPT_CHANGE4
+
+LOCAL &SCRIPT_FOLDER1
+LOCAL &SCRIPT_FOLDER2
+LOCAL &SCRIPT_FOLDER3
+LOCAL &SCRIPT_FOLDER4
+
+IF (!os.file(~~\Button\Env\SCRIPT_PATH.txt))
+(
+	OPEN  #1 ~~\Button\Env\SCRIPT_PATH.txt /CREATE
+	WRITE #1 "C:\"
+	WRITE #1 "C:\"
+	WRITE #1 "C:\"
+	WRITE #1 "C:\"
+	WRITE #1 "C:\"
+	WRITE #1 "C:\"
+	CLOSE #1
+)
+	OPEN  #1 ~~\Button\Env\SCRIPT_PATH.txt /READ
+	READ  #1 %line &SCRIPT_SELECTED
+	READ  #1 %line &SCRIPT1
+	READ  #1 %line &SCRIPT2
+	READ  #1 %line &SCRIPT3
+	READ  #1 %line &SCRIPT4
+	READ  #1 %line &LAST_SEL_SCRIPT
+	CLOSE #1
+	
+	IF "&SCRIPT1"==""
+	(
+		&SCRIPT1="C:\"
+	)
+	IF "&SCRIPT2"==""
+	(
+		&SCRIPT2="C:\"
+	)
+	IF "&SCRIPT3"==""
+	(
+		&SCRIPT3="C:\"
+	)
+	IF "&SCRIPT4"==""
+	(
+		&SCRIPT4="C:\"
+	)
+	IF "&LAST_SEL_SCRIPT"==""
+	(
+		&LAST_SEL_SCRIPT="SCRIPT_CHECK.1"
+	)
+	
+	&SCRIPT_FOLDER1=os.file.path("&SCRIPT1")
+	&SCRIPT_FOLDER2=os.file.path("&SCRIPT2")
+	&SCRIPT_FOLDER3=os.file.path("&SCRIPT3")
+	&SCRIPT_FOLDER4=os.file.path("&SCRIPT4")
+
+
+	DIALOG
+	(
+		HEADER "EASY WINDOW LOAD"
+//-----------------------		SCRIPT_SELECT		-----------------------
+		POS 0. 0. 7.
+		SCRIPT_CHECK.1: CHOOSEBOX "WINDOW_1" ""
+		SCRIPT_CHECK.2: CHOOSEBOX "WINDOW_2" ""
+		SCRIPT_CHECK.1: CHOOSEBOX "WINDOW_3" ""
+		SCRIPT_CHECK.2: CHOOSEBOX "WINDOW_4" ""
+		
+		POS 8. 0. 35.
+		SCRIPT_1:   EDIT "*.elf"
+		(;get the user input when the cursor leaves the EDIT control
+			&SCRIPT_CHANGE1=DIALOG.STRing(SCRIPT_1)
+		)
+		POS 8. 1. 35.
+		SCRIPT_2:   EDIT "*.elf"
+		(;get the user input when the cursor leaves the EDIT control
+			&SCRIPT_CHANGE2=DIALOG.STRing(SCRIPT_2)
+		)
+		POS 8. 2. 35.
+		SCRIPT_3:   EDIT "*.elf"
+		(;get the user input when the cursor leaves the EDIT control
+			&SCRIPT_CHANGE3=DIALOG.STRing(SCRIPT_3)
+		)
+		POS 8. 3. 35.
+		SCRIPT_4:   EDIT "*.elf"
+		(;get the user input when the cursor leaves the EDIT control
+			&SCRIPT_CHANGE4=DIALOG.STRing(SCRIPT_4)
+		)
+		
+		POS 45. 0. 11.
+		BUTTON "[:edit]SCRIPT1_CHANGE "
+		(
+			
+			DIALOG.SetFile SCRIPT_1  &SCRIPT_FOLDER1\*.cmm
+			DIALOG.SET SCRIPT_CHECK.1
+		)
+		POS 45. 1. 11.
+		BUTTON "[:edit]SCRIPT2_CHANGE "
+		(
+			
+			DIALOG.SetFile SCRIPT_2  &SCRIPT_FOLDER2\*.cmm
+			DIALOG.SET SCRIPT_CHECK.2
+		)
+		POS 45. 2. 11.
+		BUTTON "[:edit]SCRIPT3_CHANGE "
+		(
+			
+			DIALOG.SetFile SCRIPT_3  &SCRIPT_FOLDER3\*.cmm
+			DIALOG.SET SCRIPT_CHECK.4
+		)
+		POS 45. 3. 11.
+		BUTTON "[:edit]SCRIPT4_CHANGE "
+		(
+			
+			DIALOG.SetFile SCRIPT_4  &SCRIPT_FOLDER4\*.cmm
+			DIALOG.SET SCRIPT_CHECK.4
+		)			
+//-----------------------		OK_SELECT		-----------------------		
+		POS 45. 4. 11.
+		DEFBUTTON "LOAD" 
+		(		
+			
+			IF (STRING.FIND("cmm","&SCRIPT_CHANGE1")||STRING.FIND("cmm","&SCRIPT_CHANGE2")||STRING.FIND("cmm","&SCRIPT_CHANGE3")||STRING.FIND("cmm","&SCRIPT_CHANGE4"))
+			(
+				IF DIALOG.BOOLEAN(SCRIPT_CHECK.1)
+				(
+					&SCRIPT_SELECTED="&SCRIPT_CHANGE1"
+					OPEN #1 ~~\Button\Env\SCRIPT_PATH.txt /CREATE
+					WRITE #1 "&SCRIPT_SELECTED"
+					WRITE #1 "&SCRIPT_CHANGE1"
+					WRITE #1 "&SCRIPT2"
+					WRITE #1 "&SCRIPT3"
+					WRITE #1 "&SCRIPT4"
+					WRITE #1 "SCRIPT_CHECK.1"
+					CLOSE #1
+					DIALOG.END
+				)
+				ELSE IF DIALOG.BOOLEAN(SCRIPT_CHECK.2)
+				(
+					&SCRIPT_SELECTED="&SCRIPT_CHANGE2"
+					OPEN #1 ~~\Button\Env\SCRIPT_PATH.txt /CREATE
+					WRITE #1 "&SCRIPT_SELECTED"
+					WRITE #1 "&SCRIPT1"
+					WRITE #1 "&SCRIPT_CHANGE2"
+					WRITE #1 "&SCRIPT3"
+					WRITE #1 "&SCRIPT4"
+					WRITE #1 "SCRIPT_CHECK.2"
+					CLOSE #1
+					DIALOG.END
+				)
+				ELSE IF DIALOG.BOOLEAN(SCRIPT_CHECK.3)
+				(
+					&SCRIPT_SELECTED="&SCRIPT_CHANGE3"
+					OPEN #1 ~~\Button\Env\SCRIPT_PATH.txt /CREATE
+					WRITE #1 "&SCRIPT_SELECTED"
+					WRITE #1 "&SCRIPT1"
+					WRITE #1 "&SCRIPT2"
+					WRITE #1 "&SCRIPT_CHANGE3"
+					WRITE #1 "&SCRIPT4"
+					WRITE #1 "SCRIPT_CHECK.3"
+					CLOSE #1
+					DIALOG.END
+				)
+				ELSE IF DIALOG.BOOLEAN(SCRIPT_CHECK.4)
+				(
+					&SCRIPT_SELECTED="&SCRIPT_CHANGE4"
+					OPEN #1 ~~\Button\Env\SCRIPT_PATH.txt /CREATE
+					WRITE #1 "&SCRIPT_SELECTED"
+					WRITE #1 "&SCRIPT1"
+					WRITE #1 "&SCRIPT2"
+					WRITE #1 "&SCRIPT3"
+					WRITE #1 "&SCRIPT_CHANGE4"
+					WRITE #1 "SCRIPT_CHECK.4"
+					CLOSE #1
+					DIALOG.END
+				)				
+				DO &SCRIPT_SELECTED win
+			)
+			ELSE
+			(
+				DIALOG.MESSAGE "Selected path is wrong"
+			)
+			
+		)
+//-----------------------		CLOSE_SELECT		-----------------------		
+	  ;define action when window is closed
+	)
+
+//-----------------------		DEFAULT_ACTION		-----------------------			
+	DIALOG.SetFile SCRIPT_1  "&SCRIPT1"
+	DIALOG.SetFile SCRIPT_2  "&SCRIPT2"
+	DIALOG.SetFile SCRIPT_3  "&SCRIPT3"
+	DIALOG.SetFile SCRIPT_4  "&SCRIPT4"		
+	DIALOG.SET &LAST_SEL_SCRIPT
+	STOP

@@ -1,0 +1,33 @@
+// T32 Wed Nov 12 09:53:49 2014
+
+ B::
+ 
+ TOOLBAR ON
+ STATUSBAR ON
+ FramePOS 0.0,0.0,,,Maximized
+ WinPAGE.RESet
+ 
+ WinPAGE.Create P000
+ 
+ WinCLEAR
+ WinPOS 3.75 2.1429 54. 22. 0. 0. W001
+ Register
+ 
+ WinPOS 58.75 6.8571 51. 16. 0. 0. W003
+ SYStem.state
+ 
+ WinPOS 104.5 6.0 35. 15. 0. 0. W000
+ setup.var
+ 
+ WinPOS 5.625 3.2143 80. 25. 0. 0. W002
+ PER , "BUS (Bus Systems and Bus Bridges),XBAR_SRI (SRI Crossbar)"
+ WinPAN 0. 222.
+ 
+ WinPOS 7.5 4.2857 80. 5. 0. 0. W004
+ V.W durationArray
+ 
+ VAR.ADDWATCH pGtmMcsCurrDutyA
+ 
+ WinPAGE.select P000
+ 
+ ENDDO
