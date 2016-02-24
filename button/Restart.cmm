@@ -1,5 +1,5 @@
 B::
-
+SYSTEM.DOWN
 IF (!os.file(~~\Button\Env\Store_window.cmm))
 (
 	MKDIR ~~\Button\Env
@@ -37,8 +37,17 @@ LOCAL &CONNECT_TYPE
 LOCAL &CONNECT_MODIFY
 LOCAL &CPU_TYPE
 LOCAL &CPU_TYPE_MODIFY
+LOCAL &SINGLE_CORE_T
+LOCAL &MULTI_CORE_T
+
+LOCAL &MULTI_CORE_WINDOW_T
+LOCAL &CORE_STATE_T
+
+&SINGLE_CORE_T=FALSE()
+&MULTI_CORE_T=FALSE()
+&MULTI_CORE_WINDOW_T=FALSE()
+&CORE_STATE_T=FALSE()
 &FIRST_USER=FALSE()
-&CURRNENT_PATH_USE=TRUE()
 
 IF (!os.file(~~\Button\Env\ELF_PATH.txt))
 (
@@ -100,7 +109,7 @@ ELSE
 	READ  #1 %line &CPU_TYPE
 	CLOSE #1
 )
-SYSTEM.DOWN
+
 IF &FIRST_USER
 (
 	DIALOG.MESSAGE "You are first user."\
@@ -128,22 +137,63 @@ ELSE IF "&CONNECT_TYPE"=="JTAG"
 
 DIALOG
 (
-  HEADER "Power Reprogram V3.1"
- 
-  POS 1. 0. 27.
-  TEXT "Do you want use current path & setting?"
+  HEADER "Power Reprogram V4.0"
+  POS 5. 0. 20. 1.
+  TEXT "----Debugging core select----"
+  POS 1. 1. 12. 1.
+  CORE_CHEK.0: 	CHOOSEBOX "SINGLE CORE" ""
+  CORE_CHEK.1: 	CHOOSEBOX "MULTI CORE" ""
+
+  POS 14. 1. 15. 1.
+  CORE_STATE: CHECKBOX "Core state" ""
+  POS 14. 2. 15. 1.
+  MULTI_CORE_WINDOW: CHECKBOX "Multi core window" ""
   POS 1. 3. 27.
+  TEXT "Do you want use current path & setting?"
+  POS 1. 5. 27.
   TEXT "Developed by Steve.Han@InfineonKOR"
   
 ;buttons OK (Default) and Change
-  POS 2. 2. 10.
-  DEFBUTTON "Yes" "GOTO Reprogram"
-  POS 16. 2. 10.
-  BUTTON    "Change" "GOTO Change"
-;define action when window is closed
-  CLOSE "GOTO Close_window_1"
+  POS 2. 4. 10.
+  DEFBUTTON "Yes"
+  (
+	&CURRNENT_PATH_USE=TRUE()
+	GOSUB CORE_CHEK
+	GOSUB Reprogram
+  )
+  POS 16. 4. 10.
+  BUTTON    "Change"
+(
+	GOSUB CORE_CHEK
+	GOSUB Change
 )
+;define action when window is closed
+  CLOSE "GOTO SYSTEM_CONFIGURATION"
+)
+;default core
+  DIALOG.SET CORE_CHEK.0
 STOP
+
+CORE_CHEK:
+(
+	IF DIALOG.BOOLEAN(CORE_CHEK.0)
+	(
+		&SINGLE_CORE_T=TRUE()
+	)
+	ELSE
+	(	
+		&MULTI_CORE_T=TRUE()
+		IF DIALOG.BOOLEAN(MULTI_CORE_WINDOW)
+		(	
+			&MULTI_CORE_WINDOW_T=TRUE()
+		)
+	)
+	IF DIALOG.BOOLEAN(CORE_STATE)
+	(
+		&CORE_STATE_T=TRUE()
+	)
+RETURN
+)
 
 Reprogram:
 	&CPU_TYPE=CPU()
@@ -165,9 +215,10 @@ Reprogram:
 		DO C:\T32\Button\flash\tc29x_Auto.cmm "&PATH_SELECTED"
 	)
 	PRINT "&PATH_SELECTED flash complete./&CPU_TYPE"
+
 	IF &CURRNENT_PATH_USE==TRUE()
 	(
-		GOTO Close_window_1
+		GOTO SYSTEM_CONFIGURATION
 	)
 	ELSE
 	(
@@ -337,7 +388,7 @@ Change:
 		)
 //-----------------------		CLOSE_SELECT		-----------------------		
 	  ;define action when window is closed
-		CLOSE "GOTO Close_window_1"
+		CLOSE "GOTO SYSTEM_CONFIGURATION"
 	)
 //-----------------------		DEFAULT_ACTION		-----------------------			
 	DIALOG.SetFile PATH_1  "&PATH1"
@@ -355,22 +406,39 @@ IF DIALOG.BOOLEAN(SCRIPT_CHECK.0)==FALSE()
 	WINCLEAR
 	DO &SCRIPT_SELECTED win
 )
+GOSUB SYSTEM_CONFIGURATION
+ENDDO
+
+
+SYSTEM_CONFIGURATION:
 DIALOG.END
+IF &MULTI_CORE_T==TRUE()
+(
+	SYSTEM.DOWN
+	Core.assign  1. 2. 3.
+	IF &MULTI_CORE_WINDOW_T==TRUE()
+	(
+		d.l /core 0
+		d.l /core 1
+		d.l /core 2
+	)
+	SYSTEM.UP
+)
+
+IF &CORE_STATE_T==TRUE()
+(
+	IF WINDOW.NAME("B::TargetSystem.state DEFault ")==FALSE()
+	(
+		TargetSystem.state DEFault
+	)
+	CORE.SHOWACTIVE
+)
+
 SYSTEM.O.DUALPORT.ON
 SYSTEM.O.IMASKASM.ON
 SYSTEM.O.IMASKHLL.ON
 SETUP.VAR %SPOTLIGHT
 //SYStem.Option PERSTOP OFF
+
 ENDDO
-
-
-Close_window_1:
-DIALOG.END
-SYSTEM.O.DUALPORT.ON
-SYSTEM.O.IMASKASM.ON
-SYSTEM.O.IMASKHLL.ON
-SETUP.VAR %SPOTLIGHT
-//SYStem.Option PERSTOP OFF
-ENDDO
-
 

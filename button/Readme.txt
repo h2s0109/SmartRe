@@ -5,3 +5,4 @@ V2.0 	Multi path setting is available.
 V3.0 	Window script selection function is added.
 		window close bug is fixed.
 V3.1 	Spotlight functionality added.
+V4.0 	Multicore support.
