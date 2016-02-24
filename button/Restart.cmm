@@ -12,8 +12,15 @@ PRINT "Working windows store complete."
 WINCLEAR
 
 LOCAL &FIRST_USER
-LOCAL &PATH
-LOCAL &PATH_CHANGE
+LOCAL &PATH_SELECTED
+LOCAL &PATH1
+LOCAL &PATH2
+LOCAL &PATH_SELECTED_CHANGE
+LOCAL &PATH_CHANGE1
+LOCAL &PATH_CHANGE2
+LOCAL &PATH_SELECTED_FOLDER
+LOCAL &PATH_FOLDER1
+LOCAL &PATH_FOLDER2
 LOCAL &CONNECT_TYPE
 LOCAL &CONNECT_MODIFY
 LOCAL &CPU_TYPE
@@ -23,13 +30,21 @@ LOCAL &CPU_TYPE_MODIFY
 IF (!os.file(~~\Button\Env\ELF_PATH.txt))
 (
 	&FIRST_USER=TRUE()
-)
-ELSE
-(
-	OPEN  #1 ~~\Button\Env\ELF_PATH.txt /READ
-	READ  #1 %line &PATH
+	OPEN  #1 ~~\Button\Env\ELF_PATH.txt /CREATE
+	WRITE #1 "C:\"
+	WRITE #1 "C:\"
+	WRITE #1 "C:\"
 	CLOSE #1
 )
+	OPEN  #1 ~~\Button\Env\ELF_PATH.txt /READ
+	READ  #1 %line &PATH_SELECTED
+	READ  #1 %line &PATH1
+	READ  #1 %line &PATH2
+	CLOSE #1
+	&PATH_SELECTED_FOLDER=os.file.path("&PATH_SELECTED")
+	&PATH_FOLDER1=os.file.path("&PATH1")
+	&PATH_FOLDER2=os.file.path("&PATH2")
+
 
 IF (!os.file(~~\Button\Env\CONNECT_TYPE.txt))
 (
@@ -87,7 +102,7 @@ SYSTEM.CONFIG.DEBUGPORTTYPE JTAG
 
 DIALOG
 (
-  HEADER "Power Reprogram"
+  HEADER "Power Reprogram V2.0"
  
   POS 1. 0. 27.
   TEXT "Do you want use current path & setting?"
@@ -109,21 +124,21 @@ Reprogram:
 	&CPU_TYPE_MID=STRING.MID("&CPU_TYPE",0.,4.)
 	IF "&CPU_TYPE_MID"=="TC27"
 	(
-		DO C:\T32\Button\flash\tc27x_Auto.cmm "&PATH"
+		DO C:\T32\Button\flash\tc27x_Auto.cmm "&PATH_SELECTED"
 	)
 	ELSE IF "&CPU_TYPE_MID"=="TC23"
 	(
-		DO C:\T32\Button\flash\tc23x_Auto.cmm "&PATH"
+		DO C:\T32\Button\flash\tc23x_Auto.cmm "&PATH_SELECTED"
 	)
 	ELSE IF "&CPU_TYPE_MID"=="TC26"
 	(
-		DO C:\T32\Button\flash\tc26x_Auto.cmm "&PATH"
+		DO C:\T32\Button\flash\tc26x_Auto.cmm "&PATH_SELECTED"
 	)
 	ELSE IF "&CPU_TYPE_MID"=="TC29"
 	(
-		DO C:\T32\Button\flash\tc29x_Auto.cmm "&PATH"
+		DO C:\T32\Button\flash\tc29x_Auto.cmm "&PATH_SELECTED"
 	)
-	PRINT "&PATH flash complete./&CPU_TYPE"
+	PRINT "&PATH_SELECTED flash complete./&CPU_TYPE"
 	GOTO Close_window
 
 Change:
@@ -131,39 +146,69 @@ Change:
 	DIALOG
 	(
 		HEADER "Change with reprogram"
+		POS 1. 0. 6.
+		PATH_CHECK.1: CHOOSEBOX "PATH_1" ""
+		PATH_CHECK.2: CHOOSEBOX "PATH_2" ""
 		
-		POS 1. 0. 20.
-		myInputB:   EDIT "*.elf"
+		POS 8. 0. 23.
+		PATH_1:   EDIT "*.elf"
 		(;get the user input when the cursor leaves the EDIT control
-			&PATH_CHANGE=DIALOG.STRing(myInputB)
+			&PATH_CHANGE1=DIALOG.STRing(PATH_1)
 		)
-		;choosebox group for Connector 
-		POS 5. 1. 10.
-		LINE "Connector"
-		POS 7. 2. 10. 1.
-		Option_Connect.1: CHOOSEBOX "DAP2" ""
-		Option_Connect.2: CHOOSEBOX "JTAG" ""
+		POS 8. 1. 23.
+		PATH_2:   EDIT "*.elf"
+		(;get the user input when the cursor leaves the EDIT control
+			&PATH_CHANGE2=DIALOG.STRing(PATH_2)
+		)
 		
-		POS 22. 0. 11.
-		BUTTON "[:edit]PATH_CHANGE "
+		POS 31. 0. 11.
+		BUTTON "[:edit]PATH1_CHANGE "
 		(
 			
-			DIALOG.SetFile myInputB  *.elf
+			DIALOG.SetFile PATH_1  &PATH_FOLDER1\*.elf
 		)
-		POS 22. 1. 11.
+		POS 31. 1. 11.
+		BUTTON "[:edit]PATH2_CHANGE "
+		(
+			
+			DIALOG.SetFile PATH_2  &PATH_FOLDER2\*.elf
+		)				
+		
+		;choosebox group for Connector 
+		POS 13. 2. 10.
+		LINE "Connector"
+		POS 15. 3. 10.
+		Option_Connect.1: CHOOSEBOX "DAP2" ""
+		Option_Connect.2: CHOOSEBOX "JTAG" ""
+	
+		POS 31. 2. 11.
 		BUTTON "[:edit]CPU_CHANGE "
 		(
 			SYS.CPU *
 		)
-		POS 22. 2. 11.
+		POS 31. 3. 11.
 		DEFBUTTON "OK" 
-		(
-			IF STRING.FIND("elf","&PATH_CHANGE")
+		(		
+			IF (STRING.FIND("elf","&PATH_CHANGE1")||STRING.FIND("elf","&PATH_CHANGE2"))
 			(
-				OPEN #1 ~~\Button\Env\ELF_PATH.txt /CREATE
-				WRITE #1 "&PATH_CHANGE"
-				CLOSE #1
-				&PATH="&PATH_CHANGE"
+				IF DIALOG.BOOLEAN(PATH_CHECK.1)
+				(
+					&PATH_SELECTED="&PATH_CHANGE1"
+					OPEN #1 ~~\Button\Env\ELF_PATH.txt /CREATE
+					WRITE #1 "&PATH_SELECTED"
+					WRITE #1 "&PATH_CHANGE1"
+					WRITE #1 "&PATH2"
+					CLOSE #1
+				)
+				ELSE IF DIALOG.BOOLEAN(PATH_CHECK.2)
+				(
+					&PATH_SELECTED="&PATH_CHANGE2"
+					OPEN #1 ~~\Button\Env\ELF_PATH.txt /CREATE
+					WRITE #1 "&PATH_SELECTED"
+					WRITE #1 "&PATH1"
+					WRITE #1 "&PATH_CHANGE2"
+					CLOSE #1
+				)
 			)
 
 			&CPU_TYPE_MODIFY=CPU()
@@ -197,6 +242,9 @@ Change:
 	  ;define action when window is closed
 		CLOSE "GOTO Close_window"
 	)
+	DIALOG.SetFile PATH_1  "&PATH1"
+	DIALOG.SetFile PATH_2  "&PATH2"
+	DIALOG.SET PATH_CHECK.1
 	DIALOG.SET Option_Connect.1
 	STOP
 	
