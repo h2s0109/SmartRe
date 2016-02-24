@@ -43,6 +43,7 @@
 		SEPARATOR
 		TOOLITEM  "Window save"  	 "WS"	 "Do C:\T32\Button\WS.cmm"
 		TOOLITEM  "Window load"	     "WL"	 "Do C:\T32\Button\WL.cmm"
+		TOOLITEM  "Direct save"  	 "DS"	 "Do C:\T32\Button\WO.cmm"
 		SEPARATOR
 		TOOLITEM  "GTM_config"	 	 "GM"	 "Do C:\T32\Button\GTM_mcs.cmm"
         
