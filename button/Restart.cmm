@@ -9,9 +9,10 @@ IF (!os.file(~~\Button\Env\Store_window.cmm))
 )
 STORE ~~\Button\Env\Store_window.cmm win
 PRINT "Working windows store complete."
-WINCLEAR
 
 LOCAL &FIRST_USER
+LOCAL &CURRNENT_PATH_USE
+
 LOCAL &PATH_SELECTED
 LOCAL &PATH1
 LOCAL &PATH2
@@ -21,11 +22,23 @@ LOCAL &PATH_CHANGE2
 LOCAL &PATH_SELECTED_FOLDER
 LOCAL &PATH_FOLDER1
 LOCAL &PATH_FOLDER2
+LOCAL &PATH_SELECTED
+
+LOCAL &SCRIPT1
+LOCAL &SCRIPT2
+LOCAL &SCRIPT_SELECTED_CHANGE
+LOCAL &SCRIPT_CHANGE1
+LOCAL &SCRIPT_CHANGE2
+LOCAL &SCRIPT_SELECTED_FOLDER
+LOCAL &SCRIPT_FOLDER1
+LOCAL &SCRIPT_FOLDER2
+
 LOCAL &CONNECT_TYPE
 LOCAL &CONNECT_MODIFY
 LOCAL &CPU_TYPE
 LOCAL &CPU_TYPE_MODIFY
 &FIRST_USER=FALSE()
+&CURRNENT_PATH_USE=TRUE()
 
 IF (!os.file(~~\Button\Env\ELF_PATH.txt))
 (
@@ -44,6 +57,24 @@ IF (!os.file(~~\Button\Env\ELF_PATH.txt))
 	&PATH_SELECTED_FOLDER=os.file.path("&PATH_SELECTED")
 	&PATH_FOLDER1=os.file.path("&PATH1")
 	&PATH_FOLDER2=os.file.path("&PATH2")
+	
+IF (!os.file(~~\Button\Env\SCRIPT_PATH.txt))
+(
+	&FIRST_USER=TRUE()
+	OPEN  #1 ~~\Button\Env\SCRIPT_PATH.txt /CREATE
+	WRITE #1 "C:\"
+	WRITE #1 "C:\"
+	WRITE #1 "C:\"
+	CLOSE #1
+)
+	OPEN  #1 ~~\Button\Env\SCRIPT_PATH.txt /READ
+	READ  #1 %line &SCRIPT_SELECTED
+	READ  #1 %line &SCRIPT1
+	READ  #1 %line &SCRIPT2
+	CLOSE #1
+	&SCRIPT_SELECTED_FOLDER=os.file.path("&SCRIPT_SELECTED")
+	&SCRIPT_FOLDER1=os.file.path("&SCRIPT1")
+	&SCRIPT_FOLDER2=os.file.path("&SCRIPT2")	
 
 
 IF (!os.file(~~\Button\Env\CONNECT_TYPE.txt))
@@ -70,16 +101,13 @@ ELSE
 	CLOSE #1
 )
 SYSTEM.DOWN
-SYSTEM.O.DUALPORT.ON
-SYSTEM.O.IMASKASM.ON
-SYSTEM.O.IMASKHLL.ON
 IF &FIRST_USER
 (
 	DIALOG.MESSAGE "You are first user."\
 	"Click the CHANGE button,please."\
 	"If you have question, send a email to me."\
 	"       	       Steve.han@infineon.com"
-	SYSTEM.CPU TC27*
+	SYSTEM.CPU TC2*
 )
 ELSE
 (
@@ -88,21 +116,22 @@ ELSE
 
 IF "&CONNECT_TYPE"=="DAP"
 (
-SYSTEM.CONFIG.DEBUGPORTTYPE DAP2
-SYSTEM.CONFIG.DAP.DAPEN.ON
+	SYSTEM.CONFIG.DEBUGPORTTYPE DAP2
+	SYSTEM.CONFIG.DAP.DAPEN.ON
 )
 ELSE IF "&CONNECT_TYPE"=="JTAG"
 (
-SYSTEM.CONFIG.DEBUGPORTTYPE JTAG
+	SYSTEM.CONFIG.DEBUGPORTTYPE JTAG
 )
-
-
+SYSTEM.O.DUALPORT.ON
+SYSTEM.O.IMASKASM.ON
+SYSTEM.O.IMASKHLL.ON
 
 //SYStem.Option PERSTOP OFF //prevent halting the GTM via TriCore (chip bug)
 
 DIALOG
 (
-  HEADER "Power Reprogram V2.0"
+  HEADER "Power Reprogram V3.0"
  
   POS 1. 0. 27.
   TEXT "Do you want use current path & setting?"
@@ -115,7 +144,7 @@ DIALOG
   POS 16. 2. 10.
   BUTTON    "Change" "GOTO Change"
 ;define action when window is closed
-  CLOSE "GOTO Close_window"
+  CLOSE "GOTO Close_window_1"
 )
 STOP
 
@@ -139,56 +168,104 @@ Reprogram:
 		DO C:\T32\Button\flash\tc29x_Auto.cmm "&PATH_SELECTED"
 	)
 	PRINT "&PATH_SELECTED flash complete./&CPU_TYPE"
-	GOTO Close_window
+	IF &CURRNENT_PATH_USE==TRUE()
+	(
+		GOTO Close_window_1
+	)
+	ELSE
+	(
+		GOTO Close_window_2
+	)
 
 Change:
 	DIALOG.END
+	&CURRNENT_PATH_USE=FALSE()
 	DIALOG
 	(
+//-----------------------		PATH_SELECT		-----------------------	
+		POS 1. 0. 11.
+		LINE "PATH_SELECT"
 		HEADER "Change with reprogram"
-		POS 1. 0. 6.
+		POS 1. 1. 6.
 		PATH_CHECK.1: CHOOSEBOX "PATH_1" ""
 		PATH_CHECK.2: CHOOSEBOX "PATH_2" ""
 		
-		POS 8. 0. 23.
+		POS 8. 1. 23.
 		PATH_1:   EDIT "*.elf"
 		(;get the user input when the cursor leaves the EDIT control
 			&PATH_CHANGE1=DIALOG.STRing(PATH_1)
 		)
-		POS 8. 1. 23.
+		POS 8. 2. 23.
 		PATH_2:   EDIT "*.elf"
 		(;get the user input when the cursor leaves the EDIT control
 			&PATH_CHANGE2=DIALOG.STRing(PATH_2)
 		)
 		
-		POS 31. 0. 11.
+		POS 31. 1. 11.
 		BUTTON "[:edit]PATH1_CHANGE "
 		(
 			
 			DIALOG.SetFile PATH_1  &PATH_FOLDER1\*.elf
+			DIALOG.SET PATH_CHECK.1
 		)
-		POS 31. 1. 11.
+		POS 31. 2. 11.
 		BUTTON "[:edit]PATH2_CHANGE "
 		(
 			
 			DIALOG.SetFile PATH_2  &PATH_FOLDER2\*.elf
-		)				
+			DIALOG.SET PATH_CHECK.2
+		)
+//-----------------------		SCRIPT_SELECT		-----------------------
+		POS 1. 3. 15.
+		LINE "WINDOW_SCRIPT_SELECT"
+		POS 1. 4. 6.
+		SCRIPT_CHECK.0: CHOOSEBOX "CURRENT" ""
+		SCRIPT_CHECK.1: CHOOSEBOX "SCRIPT_1" ""
+		SCRIPT_CHECK.2: CHOOSEBOX "SCRIPT_2" ""
 		
+		POS 8. 5. 23.
+		SCRIPT_1:   EDIT "*.elf"
+		(;get the user input when the cursor leaves the EDIT control
+			&SCRIPT_CHANGE1=DIALOG.STRing(SCRIPT_1)
+		)
+		POS 8. 6. 23.
+		SCRIPT_2:   EDIT "*.elf"
+		(;get the user input when the cursor leaves the EDIT control
+			&SCRIPT_CHANGE2=DIALOG.STRing(SCRIPT_2)
+		)
+		
+		POS 31. 5. 11.
+		BUTTON "[:edit]SCRIPT1_CHANGE "
+		(
+			
+			DIALOG.SetFile SCRIPT_1  &SCRIPT_FOLDER1\*.cmm
+			DIALOG.SET SCRIPT_CHECK.1
+		)
+		POS 31. 6. 11.
+		BUTTON "[:edit]SCRIPT2_CHANGE "
+		(
+			
+			DIALOG.SetFile SCRIPT_2  &SCRIPT_FOLDER2\*.cmm
+			DIALOG.SET SCRIPT_CHECK.2
+		)	
+//-----------------------		CONNECTOR_SELECT		-----------------------
 		;choosebox group for Connector 
-		POS 13. 2. 10.
-		LINE "Connector"
-		POS 15. 3. 10.
+		POS 1. 7. 15.
+		LINE "CONNECTOR_SELECT"
+		POS 1. 8. 10.
 		Option_Connect.1: CHOOSEBOX "DAP2" ""
 		Option_Connect.2: CHOOSEBOX "JTAG" ""
-	
-		POS 31. 2. 11.
+//-----------------------		CPU_SELECT		-----------------------
+		POS 31. 7. 11.
 		BUTTON "[:edit]CPU_CHANGE "
 		(
 			SYS.CPU *
 		)
-		POS 31. 3. 11.
+//-----------------------		OK_SELECT		-----------------------		
+		POS 31. 8. 11.
 		DEFBUTTON "OK" 
 		(		
+			//**********************		PATH_CREATION		**********************
 			IF (STRING.FIND("elf","&PATH_CHANGE1")||STRING.FIND("elf","&PATH_CHANGE2"))
 			(
 				IF DIALOG.BOOLEAN(PATH_CHECK.1)
@@ -207,6 +284,28 @@ Change:
 					WRITE #1 "&PATH_SELECTED"
 					WRITE #1 "&PATH1"
 					WRITE #1 "&PATH_CHANGE2"
+					CLOSE #1
+				)
+			)
+			
+			IF (STRING.FIND("cmm","&SCRIPT_CHANGE1")||STRING.FIND("cmm","&SCRIPT_CHANGE2"))
+			(
+				IF DIALOG.BOOLEAN(SCRIPT_CHECK.1)
+				(
+					&SCRIPT_SELECTED="&SCRIPT_CHANGE1"
+					OPEN #1 ~~\Button\Env\SCRIPT_PATH.txt /CREATE
+					WRITE #1 "&SCRIPT_SELECTED"
+					WRITE #1 "&SCRIPT_CHANGE1"
+					WRITE #1 "&SCRIPT2"
+					CLOSE #1
+				)
+				ELSE IF DIALOG.BOOLEAN(SCRIPT_CHECK.2)
+				(
+					&SCRIPT_SELECTED="&SCRIPT_CHANGE2"
+					OPEN #1 ~~\Button\Env\SCRIPT_PATH.txt /CREATE
+					WRITE #1 "&SCRIPT_SELECTED"
+					WRITE #1 "&SCRIPT1"
+					WRITE #1 "&SCRIPT_CHANGE2"
 					CLOSE #1
 				)
 			)
@@ -239,17 +338,33 @@ Change:
 			)
 			GOSUB Reprogram
 		)
+//-----------------------		CLOSE_SELECT		-----------------------		
 	  ;define action when window is closed
-		CLOSE "GOTO Close_window"
+		CLOSE "GOTO Close_window_1"
 	)
+//-----------------------		DEFAULT_ACTION		-----------------------			
 	DIALOG.SetFile PATH_1  "&PATH1"
 	DIALOG.SetFile PATH_2  "&PATH2"
+	DIALOG.SetFile SCRIPT_1  "&SCRIPT1"
+	DIALOG.SetFile SCRIPT_2  "&SCRIPT2"	
 	DIALOG.SET PATH_CHECK.1
+	DIALOG.SET SCRIPT_CHECK.0
 	DIALOG.SET Option_Connect.1
 	STOP
 	
-Close_window:
+Close_window_2:
+IF DIALOG.BOOLEAN(SCRIPT_CHECK.0)==FALSE()
+(
+	WINCLEAR
+	DO &SCRIPT_SELECTED win
+)
 DIALOG.END
-DO ~~\Button\Env\Store_window.cmm win
+
 ENDDO
+
+
+Close_window_1:
+DIALOG.END
+ENDDO
+
 
