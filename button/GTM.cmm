@@ -1,0 +1,87 @@
+
+ENTRY &MCS_CORE &MCS_CORE_CONFIG &MCS_CHANNEL &CPU_TYPE &CONNECT_TYPE
+LOCAL &portTC0 &portGTM &addressTC0 &addressGTM
+
+GOSUB setup_intercom
+
+ON CMD CORETC0 GOSUB coreTC0
+ON CMD COREGTM GOSUB coreGTM
+CORETC0 MCDS.ON
+CORETC0 MCDS.SOURCE CpuMux1 Core OTGM
+COREGTM SYSTEM.DOWN
+
+; ; set up synchronization between GUIs
+//CORETC0 SYStem.Option PERSTOP Off //needs to be enabled, GTM acts as periphery
+CORETC0 SYnch.Connect &addressGTM
+COREGTM SYnch.Connect &addressTC0
+
+CORETC0 SYnch.MasterBreak ON // required
+CORETC0 SYnch.SlaveBreak ON // required
+CORETC0 SYnch.MasterGo ON    // optional, also served by PERSTOP
+CORETC0 SYnch.SlaveGo ON    // optional, also served by PERSTOP
+CORETC0 SYnch.SlaveSystemMode ON    // optional, also served by PERSTOP
+CORETC0 SYnch.MasterSystemMode ON    // optional, also served by PERSTOP
+
+COREGTM SYnch.SlaveBreak ON  // required
+COREGTM SYnch.MasterBreak ON  // required
+COREGTM SYnch.SlaveGo ON     // optional, also served by PERSTOP
+COREGTM SYnch.MasterGo ON     // optional, also served by PERSTOP
+COREGTM SYnch.SlaveSystemMode ON    // optional, also served by PERSTOP
+COREGTM SYnch.MasterSystemMode ON    // optional, also served by PERSTOP
+
+COREGTM SYSTEM.CPU TC277TF		// Select CPU
+
+COREGTM SYSTEM.CONFIG.CORE &MCS_CORE_CONFIG. 1.		// Select GTM Module of TC277TE CPU
+COREGTM SYStem.CONFIG.MCSModule &MCS_CORE	// Select MCS channel
+
+COREGTM SETUP.Var %SpotLight		// Optional
+COREGTM Break.Select Program Onchip 	// Optional
+
+COREGTM TrOnchip.RESet
+IF "&CONNECT_TYPE"=="DAP2"
+(
+	CORETC0 SYSTEM.CONFIG.DEBUGPORTTYPE DAP2
+	CORETC0 SYSTEM.CONFIG.DAP.DAPEN.ON
+	CORETC0 SYSTEM.JC 10MHZ
+)
+ELSE IF "&CONNECT_TYPE"=="JTAG"
+(
+	CORETC0 SYSTEM.CONFIG.DEBUGPORTTYPE JTAG
+)
+COREGTM TrOnchip.OTGB0 SELECT MCA
+COREGTM TrOnchip.MCS Module &MCS_CORE
+COREGTM TrOnchip.MCS Channel &MCS_CHANNEL
+COREGTM TrOnchip.MCS A ON
+
+COREGTM SYSTEM.O.DUALPORT.ON
+COREGTM SYSTEM.O.IMASKASM.ON
+COREGTM SYSTEM.O.IMASKHLL.ON
+
+CORETC0 MAP.BOnchip 0x0--0xffffffff // force onchip-breakpoints
+CORETC0 SYStem.UP
+COREGTM SYStem.Mode Attach
+COREGTM Break
+
+ENDDO
+setup_intercom:
+(
+  &portTC0=FORMAT.DECIMAL(1.,INTERCOM.PORT())
+  &portGTM=FORMAT.DECIMAL(1.,INTERCOM.PORT()+1.)
+  &addressTC0="127.0.0.1:&portTC0"
+  &addressGTM="127.0.0.1:&portGTM"
+  RETURN
+)
+coreGTM:
+(
+  LOCAL &params
+  ENTRY %Line &params
+  INTERCOM.execute &addressGTM &params ; execute on remote GUI
+  RETURN
+)
+coreTC0:
+(
+  LOCAL &params
+  ENTRY %Line &params
+  &params ; execute on this GUI
+  RETURN
+)

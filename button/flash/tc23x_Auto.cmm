@@ -99,8 +99,6 @@
 
   IF SYStem.MODE()<5.
   (
-    SYStem.RESet
-
     IF "&param_cpu"!=""
       SYStem.CPU &param_cpu
     IF !CPUIS(TC23*)

@@ -7,11 +7,11 @@ SYStem.CONFIG.MCSModule MCS2	// Select MCS channel
 sys.o.dualport on		// Optional
 SETUP.Var %SpotLight		// Optional
 Break.Select Program Onchip 	// Optional
-TrOnchip.RESet
+;TrOnchip.RESet
 
-TrOnchip.OTGB0 SELECT MCA
-TrOnchip.MCS Module MCS0
-TrOnchip.MCS Channel ALL
+;TrOnchip.OTGB0 SELECT MCA
+;TrOnchip.MCS Module MCS0
+;TrOnchip.MCS Channel ALL
 SYStem.Mode Attach		// Wait until entering Debug mode on main core
 Break				// Enter Debug mode if main core enter debug mode
 

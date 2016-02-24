@@ -98,31 +98,12 @@
 
   IF SYStem.MODE()<5.
   (
-    SYStem.RESet
-
     IF "&param_cpu"!=""
       SYStem.CPU &param_cpu
     IF !CPUIS(TC29*)
       SYStem.CPU TC29*
 
     CORE.select 0.        ; CPU0 is selected for flash programming.
-    IF CPUIS("TC29*A")||CPUIS("TC29*E")||CPUIS("TC29*F")
-    (
-      ; Emulation Devices in LQFP packages (except Fusion Quad and A-Step)
-      ; do not support JTAG (TDI pin is used as VDDPSB)
-      IF (ID.CABLE()==0x0029)||(ID.CABLE()==0x4155)
-      (
-        ; DAP only supported by
-        ; - Bi-directional OCDS Debug Cable (0x0029)
-        ; - Automotive Debug Cable (0x4155)
-        SYStem.CONFIG.DEBUGPORTTYPE DAP2
-      )
-      ELSE
-      (
-        DIALOG.OK CPU()+" not supported by debug cable."
-        ENDDO
-      )
-    )
     SYStem.Up
   )
 

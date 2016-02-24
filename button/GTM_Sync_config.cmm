@@ -21,7 +21,7 @@ CORETC0 SYnch.MasterGo ON    // optional, also served by PERSTOP
 COREGTM SYnch.SlaveGo ON     // optional, also served by PERSTOP
 
 COREGTM SYSTEM.CPU TC277TF		// Select CPU
-COREGTM sys.config.core 5. 1.		// Select GTM Module of TC277TE CPU
+COREGTM sys.config.core 7. 1.		// Select GTM Module of TC277TE CPU
 COREGTM SYStem.CONFIG.MCSModule MCS2	// Select MCS channel
 COREGTM sys.o.dualport on		// Optional
 COREGTM SETUP.Var %SpotLight		// Optional
@@ -29,7 +29,9 @@ COREGTM Break.Select Program Onchip 	// Optional
 COREGTM TrOnchip.RESet
 
 COREGTM TrOnchip.OTGB0 SELECT MCA
-COREGTM TrOnchip.MCS Module MCS0
+COREGTM TrOnchip.OTGB2 SELECT ARU
+COREGTM TrOnchip.OTGB2 Fetch
+COREGTM TrOnchip.MCS Module MCS2
 COREGTM TrOnchip.MCS Channel ALL
 
 SYSTEM.CONFIG.DEBUGPORTTYPE DAP2

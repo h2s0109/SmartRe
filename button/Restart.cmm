@@ -1,5 +1,10 @@
 B::
 SYSTEM.DOWN
+LOCAL &portTC0 &portGTM &addressTC0 &addressGTM
+GOSUB setup_intercom
+ON CMD CORETC0 GOSUB coreTC0
+ON CMD COREGTM GOSUB coreGTM
+
 IF (!os.file(~~\Button\Env\Store_window.cmm))
 (
 	MKDIR ~~\Button\Env
@@ -46,6 +51,11 @@ LOCAL &CORE_STATE_T
 LOCAL &SIMPLE_REPROGRAM_T
 LOCAL &CORE_SELECTED
 LOCAL &MODE
+LOCAL &MCS_CORE
+LOCAL &MCS_CHANNEL_NUMBER
+LOCAL &MCS_CORE_CONFIG
+LOCAL &GTM_SELECT
+
 &SINGLE_CORE_T=FALSE()
 &DOUBLE_CORE_T=FALSE()
 &TRIPLE_CORE_T=FALSE()
@@ -62,11 +72,19 @@ IF (!os.file(~~\Button\Env\ETC_PATH.txt))
 	OPEN  #1 ~~\Button\Env\ETC_PATH.txt /CREATE
 	WRITE #1 "SINGLE"
 	WRITE #1 "SIMPLE"
+	WRITE #1 "MCS0"
+	WRITE #1 "5"
+	WRITE #1 "CHANNEL_0"
+	WRITE #1 "GTM_YES"
 	CLOSE #1
 )
 	OPEN  #1 ~~\Button\Env\ETC_PATH.txt /READ
 	READ  #1 %line &CORE_SELECTED
 	READ  #1 %line &MODE
+	READ  #1 %line &MCS_CORE
+	READ  #1 %line &MCS_CORE_CONFIG
+	READ  #1 %line &MCS_CHANNEL_NUMBER
+	READ  #1 %line &GTM_SELECT
 	CLOSE #1
 	
 IF (!os.file(~~\Button\Env\ELF_PATH.txt))
@@ -103,9 +121,8 @@ IF (!os.file(~~\Button\Env\SCRIPT_PATH.txt))
 	CLOSE #1
 	&SCRIPT_SELECTED_FOLDER=os.file.path("&SCRIPT_SELECTED")
 	&SCRIPT_FOLDER1=os.file.path("&SCRIPT1")
-	&SCRIPT_FOLDER2=os.file.path("&SCRIPT2")	
-
-
+	&SCRIPT_FOLDER2=os.file.path("&SCRIPT2")
+	
 IF (!os.file(~~\Button\Env\CONNECT_TYPE.txt))
 (
 	&FIRST_USER=TRUE()
@@ -148,7 +165,7 @@ IF "&MODE"=="COMPLEX"
 	(
 		SYSTEM.CONFIG.DEBUGPORTTYPE DAP2
 		SYSTEM.CONFIG.DAP.DAPEN.ON
-		SYSTEM.JC 10MHZ
+		SYSTEM.JC 40MHZ
 	)
 	ELSE IF "&CONNECT_TYPE"=="JTAG"
 	(
@@ -160,52 +177,79 @@ IF "&MODE"=="COMPLEX"
 
 DIALOG
 (
-  HEADER "Power Reprogram V4.1"
-  POS 5. 0. 20. 1.
-  TEXT "----Debugging core select----"
-  POS 1. 1. 12. 1.
-  CORE_CHEK.0: 	CHOOSEBOX "SINGLE CORE" ""
-  CORE_CHEK.1: 	CHOOSEBOX "2 CORE" ""
-  CORE_CHEK.2: 	CHOOSEBOX "3 CORE" ""
-
-  POS 14. 1. 15. 1.
-  CORE_STATE: CHECKBOX "Core state" ""
-  POS 14. 2. 15. 1.
-  MULTI_CORE_WINDOW: CHECKBOX "Multi core window" ""
-  POS 14. 3. 15. 1.
-  SIMPLE_REPROGRAM: CHECKBOX "Simple reprogram" ""  
-  POS 1. 4. 27.
-  TEXT "Do you want use current path & setting?"
-  POS 1. 6. 27.
-  TEXT "Developed by Steve.Han@InfineonKOR"
-  
-;buttons OK (Default) and Change
-  POS 2. 5. 10.
-  DEFBUTTON "Yes"
-  (
-	&CURRNENT_PATH_USE=TRUE()
-	IF DIALOG.BOOLEAN(SIMPLE_REPROGRAM)
-	(	
-		&SIMPLE_REPROGRAM_T=TRUE()
-		&MODE="SIMPLE"
-	)
-	ELSE
+	HEADER "Power Reprogram V5.0"
+	POS 0. 0. 14. 5.
+	BOX "CORE"
+	POS 1. 1. 10. 1.
+	CORE_CHEK.0: 	CHOOSEBOX "1 CORE" ""
+	CORE_CHEK.1: 	CHOOSEBOX "2 CORE" ""
+	CORE_CHEK.2: 	CHOOSEBOX "3 CORE" ""
+	POS 14. 0. 16. 5.
+	BOX "ETC"
+	POS 15. 1. 14. 1.
+	CORE_STATE: CHECKBOX "Core state" ""
+	POS 15. 2. 14. 1.
+	MULTI_CORE_WINDOW: CHECKBOX "Multicore window" ""
+	POS 15. 3. 14. 1.
+	SIMPLE_REPROGRAM: CHECKBOX "Simple reprogram" ""
+	POS 0. 4. 30. 3.
+	BOX "GTM"
+	POS 2. 5. 10. 1.
+	GTM_DEBUG: CHECKBOX "GTM Debug" ""
+	POS 15. 5. 11.
+	BUTTON "[:edit]MCS "
 	(
-		
-		&MODE="COMPLEX"
+		GOSUB MCS_SUB
 	)
-	GOSUB CORE_CHEK
-	GOSUB ENVIRONMENT
-	GOSUB Reprogram
-  )
-  POS 16. 5. 10.
-  BUTTON    "Change"
-(
-	GOSUB CORE_CHEK
-	GOSUB Change
-)
+
+	POS 1. 7. 29. 0.
+	TEXT "Do you want use current path & setting?"
+	POS 1. 9. 27.
+	TEXT "Developed by Steve.Han@InfineonKOR"
+  
+	;buttons OK (Default) and Change
+	POS 2. 8. 10.
+	BUTTON "Yes"
+	(
+		IF DIALOG.BOOLEAN(GTM_DEBUG)
+		(
+			&GTM_SELECT="GTM_YES"
+		)
+		ELSE
+		(
+			&GTM_SELECT="GTM_NO"
+		)
+		&CURRNENT_PATH_USE=TRUE()
+		IF DIALOG.BOOLEAN(SIMPLE_REPROGRAM)
+		(	
+			&SIMPLE_REPROGRAM_T=TRUE()
+			&MODE="SIMPLE"
+		)
+		ELSE
+		(	
+			&MODE="COMPLEX"
+		)
+		GOSUB CORE_CHEK_SUB
+		GOSUB ENVIRONMENT_SUB
+		GOSUB REPROGRAM_SUB
+	)
+	POS 16. 8. 10.
+	BUTTON    "Change"
+	(
+			IF DIALOG.BOOLEAN(GTM_DEBUG)
+			(
+				&GTM_SELECT="GTM_YES"
+			)
+			ELSE
+			(
+				&GTM_SELECT="GTM_NO"
+			)
+		GOSUB ENVIRONMENT_SUB
+		GOSUB CORE_CHEK_SUB
+		GOSUB Change
+	)
 ;define action when window is closed
-  CLOSE "GOTO CLOSE_END"
+	CLOSE "GOTO CLOSE_END"
 )
 ;default core
 IF "&CORE_SELECTED"=="SINGLE"
@@ -225,9 +269,151 @@ IF "&MODE"=="SIMPLE"
 (
 	DIALOG.SET SIMPLE_REPROGRAM
 )
+IF "&GTM_SELECT"=="GTM_YES"
+(
+	DIALOG.SET GTM_DEBUG
+)
 STOP
 
-CORE_CHEK:
+MCS_SUB:
+(
+	DIALOG
+	(
+		HEADER "MCS"
+		POS 0. 0. 8. 6.
+		BOX "CORE"
+		POS 1. 1. 5. 1.
+		MCS_CORE.0: 	CHOOSEBOX "MCS0" ""
+		MCS_CORE.1: 	CHOOSEBOX "MCS1" ""
+		MCS_CORE.2: 	CHOOSEBOX "MCS2" ""
+		MCS_CORE.3: 	CHOOSEBOX "MCS3" ""
+		POS 0. 6. 8.
+		BUTTON    "APPLY"
+		(
+			IF DIALOG.BOOLEAN(MCS_CORE.0)
+			(
+				&MCS_CORE="MCS0"
+				&MCS_CORE_CONFIG="5"
+			)
+			ELSE IF DIALOG.BOOLEAN(MCS_CORE.1)
+			(
+				&MCS_CORE="MCS1"
+				&MCS_CORE_CONFIG="6"
+			)
+			ELSE IF DIALOG.BOOLEAN(MCS_CORE.2)
+			(
+				&MCS_CORE="MCS2"
+				&MCS_CORE_CONFIG="7"
+			)
+			ELSE IF DIALOG.BOOLEAN(MCS_CORE.3)
+			(
+				&MCS_CORE="MCS3"
+				&MCS_CORE_CONFIG="8"
+			)
+			
+			IF DIALOG.BOOLEAN(MCS_CHANNEL.0)
+			(
+				&MCS_CHANNEL_NUMBER="0"
+			)
+			ELSE IF DIALOG.BOOLEAN(MCS_CHANNEL.1)
+			(
+				&MCS_CHANNEL_NUMBER="1"
+			)
+			ELSE IF DIALOG.BOOLEAN(MCS_CHANNEL.2)
+			(
+				&MCS_CHANNEL_NUMBER="2"
+			)
+			ELSE IF DIALOG.BOOLEAN(MCS_CHANNEL.3)
+			(
+				&MCS_CHANNEL_NUMBER="3"
+			)
+			ELSE IF DIALOG.BOOLEAN(MCS_CHANNEL.4)
+			(
+				&MCS_CHANNEL_NUMBER="4"
+			)
+			ELSE IF DIALOG.BOOLEAN(MCS_CHANNEL.5)
+			(
+				&MCS_CHANNEL_NUMBER="5"
+			)
+			ELSE IF DIALOG.BOOLEAN(MCS_CHANNEL.6)
+			(
+				&MCS_CHANNEL_NUMBER="6"
+			)
+			ELSE IF DIALOG.BOOLEAN(MCS_CHANNEL.7)
+			(
+				&MCS_CHANNEL_NUMBER="7"
+			)
+			
+			DIALOG.END
+		)
+		POS 8. 0. 8. 10.
+		BOX "CHANNEL"
+		POS 10. 1. 3. 1.
+		MCS_CHANNEL.0: 	CHOOSEBOX "0" ""
+		MCS_CHANNEL.1: 	CHOOSEBOX "1" ""
+		MCS_CHANNEL.2: 	CHOOSEBOX "2" ""
+		MCS_CHANNEL.3: 	CHOOSEBOX "3" ""
+		MCS_CHANNEL.4: 	CHOOSEBOX "4" ""
+		MCS_CHANNEL.5: 	CHOOSEBOX "5" ""
+		MCS_CHANNEL.6: 	CHOOSEBOX "6" ""
+		MCS_CHANNEL.7: 	CHOOSEBOX "7" ""
+	)
+	
+	
+	IF	"&MCS_CORE"=="MCS0"
+	(
+		DIALOG.SET MCS_CORE.0
+	)
+	ELSE IF	"&MCS_CORE"=="MCS1"
+	(
+		DIALOG.SET MCS_CORE.1
+	)
+	ELSE IF	"&MCS_CORE"=="MCS2"
+	(
+		DIALOG.SET MCS_CORE.2
+	)
+	ELSE IF	"&MCS_CORE"=="MCS3"
+	(
+		DIALOG.SET MCS_CORE.3
+	)
+
+	IF "&MCS_CHANNEL_NUMBER"=="0"
+	(
+		DIALOG.SET MCS_CHANNEL.0
+	)
+	ELSE IF "&MCS_CHANNEL_NUMBER"=="1"
+	(
+		DIALOG.SET MCS_CHANNEL.1
+	)
+	ELSE IF "&MCS_CHANNEL_NUMBER"=="2"
+	(
+		DIALOG.SET MCS_CHANNEL.2
+	)	
+	ELSE IF "&MCS_CHANNEL_NUMBER"=="3"
+	(
+		DIALOG.SET MCS_CHANNEL.3
+	)
+	ELSE IF "&MCS_CHANNEL_NUMBER"=="4"
+	(
+		DIALOG.SET MCS_CHANNEL.4
+	)
+	ELSE IF "&MCS_CHANNEL_NUMBER"=="5"
+	(
+		DIALOG.SET MCS_CHANNEL.5
+	)
+	ELSE IF "&MCS_CHANNEL_NUMBER"=="6"
+	(
+		DIALOG.SET MCS_CHANNEL.6
+	)
+	ELSE IF "&MCS_CHANNEL_NUMBER"=="7"
+	(
+		DIALOG.SET MCS_CHANNEL.7
+	)	
+	
+STOP
+)
+
+CORE_CHEK_SUB:
 (
 	IF DIALOG.BOOLEAN(CORE_CHEK.0)
 	(
@@ -259,18 +445,28 @@ CORE_CHEK:
 	)
 	RETURN
 )
-ENVIRONMENT:
+ENVIRONMENT_SUB:
 (
 	OPEN #1 ~~\Button\Env\ETC_PATH.txt /CREATE
 	WRITE #1 "&CORE_SELECTED"
-	WRITE #1 "&MODE"					
+	WRITE #1 "&MODE"
+	WRITE #1 "&MCS_CORE"
+	WRITE #1 "&MCS_CORE_CONFIG"
+	WRITE #1 "&MCS_CHANNEL_NUMBER"
+	WRITE #1 "&GTM_SELECT"
 	CLOSE #1	
 	RETURN
 )
 
-
-
-Reprogram:
+REPROGRAM_SUB:
+(	
+	IF "&GTM_SELECT"=="GTM_YES"
+	(	
+	//SYStem.Option PERSTOP OFF
+		ON CMD COREGTM GOSUB coreGTM
+		GOSUB setup_intercom
+		COREGTM SYSTEM.DOWN
+	)
 	&CPU_TYPE=CPU()
 	&CPU_TYPE_MID=STRING.MID("&CPU_TYPE",0.,4.)
 	IF "&CPU_TYPE_MID"=="TC27"
@@ -299,6 +495,7 @@ Reprogram:
 	(
 		GOSUB END_PROCESS1
 	)
+)
 
 	
 Change:
@@ -454,7 +651,7 @@ Change:
 				WRITE  #1 "&CONNECT_MODIFY"
 				CLOSE #1
 			)
-			GOSUB Reprogram
+			GOSUB REPROGRAM_SUB
 		)
 //-----------------------		CLOSE_SELECT		-----------------------		
 	  ;define action when window is closed
@@ -477,17 +674,6 @@ IF DIALOG.BOOLEAN(SCRIPT_CHECK.0)==FALSE()
 	DO &SCRIPT_SELECTED win
 )
 SYSTEM.DOWN
-IF "&CONNECT_TYPE"=="DAP2"
-(
-	SYSTEM.CONFIG.DEBUGPORTTYPE DAP2
-	SYSTEM.CONFIG.DAP.DAPEN.ON
-	SYSTEM.JC 10MHZ
-)
-ELSE IF "&CONNECT_TYPE"=="JTAG"
-(
-	SYSTEM.CONFIG.DEBUGPORTTYPE JTAG
-)
-
 
 SYSTEM.O.DUALPORT.ON
 SYSTEM.O.IMASKASM.ON
@@ -503,32 +689,44 @@ ENDDO
 END_PROCESS2:
 DIALOG.END
 SYSTEM.DOWN
-IF &SINGLE_CORE_T==TRUE()
+IF "&CONNECT_TYPE"=="DAP2"
 (
-	Core.assign  1.
+	SYSTEM.CONFIG.DEBUGPORTTYPE DAP2
+	SYSTEM.CONFIG.DAP.DAPEN.ON
+	SYSTEM.JC 10MHZ
 )
-ELSE IF &DOUBLE_CORE_T==TRUE()
+ELSE IF "&CONNECT_TYPE"=="JTAG"
 (
-	
-	Core.assign  1. 2.
-	IF &MULTI_CORE_WINDOW_T==TRUE()
+	SYSTEM.CONFIG.DEBUGPORTTYPE JTAG
+)
+IF "&CPU_TYPE_MID"!="TC23"
+(
+	IF &SINGLE_CORE_T==TRUE()
 	(
-		d.l /core 0
-		d.l /core 1
+		Core.assign  1.
 	)
-	
-)
-ELSE
-(
-	Core.assign  1. 2. 3.
-	IF &MULTI_CORE_WINDOW_T==TRUE()
+	ELSE IF &DOUBLE_CORE_T==TRUE()
 	(
-		d.l /core 0
-		d.l /core 1
-		d.l /core 2
+		
+		Core.assign  1. 2.
+		IF &MULTI_CORE_WINDOW_T==TRUE()
+		(
+			d.l /core 0
+			d.l /core 1
+		)
+		
+	)
+	ELSE
+	(
+		Core.assign  1. 2. 3.
+		IF &MULTI_CORE_WINDOW_T==TRUE()
+		(
+			d.l /core 0
+			d.l /core 1
+			d.l /core 2
+		)
 	)
 )
-
 
 IF "&MODE"=="COMPLEX"
 (
@@ -541,16 +739,47 @@ IF "&MODE"=="COMPLEX"
 
 IF &CORE_STATE_T==TRUE()
 (
-	IF WINDOW.NAME("B::TargetSystem.state DEFault ")==FALSE()
+	IF WINDOW.NAME("B::TargetSystem.state DEFault")==FALSE()
 	(
 		TargetSystem.state DEFault
 	)
 	CORE.SHOWACTIVE
 )
-SYSTEM.UP
+IF "&GTM_SELECT"=="GTM_YES"
+(
+	DO C:\T32\Button\GTM.cmm &MCS_CORE &MCS_CORE_CONFIG &MCS_CHANNEL_NUMBER &CPU_TYPE &CONNECT_TYPE
+)
+ELSE
+(
+	SYSTEM.UP
+)
 ENDDO
 //-----------------------		CLOSE_END		---------------------------
 CLOSE_END:
 DIALOG.END
 ENDDO
+
+
+setup_intercom:
+(
+  &portTC0=FORMAT.DECIMAL(1.,INTERCOM.PORT())
+  &portGTM=FORMAT.DECIMAL(1.,INTERCOM.PORT()+1.)
+  &addressTC0="127.0.0.1:&portTC0"
+  &addressGTM="127.0.0.1:&portGTM"
+  RETURN
+)
+coreGTM:
+(
+  LOCAL &params
+  ENTRY %Line &params
+  INTERCOM.execute &addressGTM &params ; execute on remote GUI
+  RETURN
+)
+coreTC0:
+(
+  LOCAL &params
+  ENTRY %Line &params
+  &params ; execute on this GUI
+  RETURN
+)
 
