@@ -1,0 +1,40 @@
+B::
+
+sys.res				// Reset the system window option
+sys.cpu tc277tf		// Select CPU
+sys.config.core 6. 1.		// Select GTM Module of TC277TE CPU
+SYStem.CONFIG.MCSModule MCS1	// Select MCS core 1. of the MCS cores of GTM Module
+sys.o.dualport on		// Optional
+SETUP.Var %SpotLight		// Optional
+Break.Select Program Onchip 	// Optional
+TrOnchip.RESet
+
+TrOnchip.OTGB0 SELECT MCA
+TrOnchip.MCS Module MCS0
+TrOnchip.MCS Channel ALL
+SYStem.Mode Attach		// Wait until entering Debug mode on main core
+Break				// Enter Debug mode if main core enter debug mode
+
+;========================================================================
+; Setting to use breakpoint
+
+
+;TrOnchip.OTGB0.SENsitivNeg 0xFFFF
+;TrOnchip.OTGB0.SENsitivPos 0xFFFF
+
+;========================================================================
+; Setting to use onchip Trace
+
+;TrOnchip.OTGB1 SELECT IOS
+;TrOnchip.OTGB1 LowBMType ATOM
+;TrOnchip.OTGB1 HighBMType off
+;TrOnchip.OTGB1 LowBMInst 2
+;TrOnchip.OTGB1 HighBMInst 0
+
+;TrOnchip.OTGB2 SELECT ARU
+;TrOnchip.ARU.Access0 0x8f
+;TrOnchip.ARU.Access1 0x97
+
+
+
+ENDDO
