@@ -6,7 +6,6 @@ LOCAL &MCS_CORE
 LOCAL &MCS_CHANNEL_NUMBER
 LOCAL &MCS_CORE_CONFIG
 
-
 IF (!os.file(~~\Button\Env\ETC_PATH.txt))
 (
 	&FIRST_USER=TRUE()
@@ -130,10 +129,14 @@ MCS_SUB:
 	
 			coreGTM SYSTEM.CONFIG.CORE &MCS_CORE_CONFIG. 1.		// Select GTM Module of TC277TE CPU
 			coreGTM SYStem.CONFIG.MCSModule &MCS_CORE	// Select MCS channel
+			coreGTM CORE.select &MCS_CHANNEL_NUMBER	// Select MCS channel need to check again
 			
+			IF CHIP.EmulationDevice()
+			(
 			coreGTM TrOnchip.MCS Module &MCS_CORE
 			coreGTM TrOnchip.MCS Channel &MCS_CHANNEL_NUMBER
 			COREGTM TrOnchip.MCS A ON
+			)
 			;CORETC0 SYStem.Option PERSTOP off
 			CORETC0 SYStem.UP
 			
@@ -142,6 +145,7 @@ MCS_SUB:
 			GOSUB ENVIRONMENT_SUB
 			DIALOG.END
 		)
+	
 		POS 8. 0. 8. 10.
 		BOX "CHANNEL"
 		POS 10. 1. 3. 1.
@@ -153,8 +157,9 @@ MCS_SUB:
 		MCS_CHANNEL.5: 	CHOOSEBOX "5" ""
 		MCS_CHANNEL.6: 	CHOOSEBOX "6" ""
 		MCS_CHANNEL.7: 	CHOOSEBOX "7" ""
+		CLOSE "GOTO CLOSE_END_SUB"
 	)
-	
+
 	
 	IF	"&MCS_CORE"=="MCS0"
 	(
@@ -220,3 +225,7 @@ ENVIRONMENT_SUB:
 	CLOSE #1	
 	RETURN
 )
+//-----------------------		CLOSE_END_SUB		---------------------------
+CLOSE_END_SUB:
+DIALOG.END
+ENDDO

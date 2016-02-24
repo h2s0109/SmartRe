@@ -23,16 +23,19 @@ LOCAL &PATH1
 LOCAL &PATH2
 LOCAL &PATH3
 LOCAL &PATH4
+LOCAL &PATH5
 LOCAL &PATH_SELECTED_CHANGE
 LOCAL &PATH_CHANGE1
 LOCAL &PATH_CHANGE2
 LOCAL &PATH_CHANGE3
 LOCAL &PATH_CHANGE4
+LOCAL &PATH_CHANGE5
 LOCAL &PATH_SELECTED_FOLDER
 LOCAL &PATH_FOLDER1
 LOCAL &PATH_FOLDER2
 LOCAL &PATH_FOLDER3
 LOCAL &PATH_FOLDER4
+LOCAL &PATH_FOLDER5
 LOCAL &PATH_SELECTED
 LOCAL &PATH_SELECTED_NUM
 
@@ -44,11 +47,13 @@ LOCAL &SCRIPT_CHANGE2
 LOCAL &SCRIPT_SELECTED_FOLDER
 LOCAL &SCRIPT_FOLDER1
 LOCAL &SCRIPT_FOLDER2
-
+LOCAL &VERI_FAVORITE &CPU_TYPE_FAVORITE &CONNECT_TYPE_FAVORITE &PATH_SELECTED_FAVORITE &PATH_SELECTED_NUM_FAVORITE
+&VERI_FAVORITE=FALSE()
 LOCAL &CONNECT_TYPE
 LOCAL &CONNECT_TYPE_LAST
 LOCAL &CONNECT_MODIFY
 LOCAL &CPU_TYPE
+LOCAL &CPU_TYPE_MID
 LOCAL &CPU_TYPE_MODIFY
 LOCAL &SINGLE_CORE_T
 LOCAL &DOUBLE_CORE_T
@@ -102,6 +107,7 @@ IF (!os.file(~~\Button\Env\ELF_PATH.txt))
 	WRITE #1 "C:\"
 	WRITE #1 "C:\"
 	WRITE #1 "C:\"
+	WRITE #1 "C:\"
 	WRITE #1 "PATH_CHECK.1"
 	CLOSE #1
 )
@@ -110,7 +116,8 @@ IF (!os.file(~~\Button\Env\ELF_PATH.txt))
 	READ  #1 %line &PATH1
 	READ  #1 %line &PATH2
 	READ  #1 %line &PATH3
-	READ  #1 %line &PATH4 
+	READ  #1 %line &PATH4
+	READ  #1 %line &PATH5
 	READ  #1 %line &PATH_SELECTED_NUM
 	CLOSE #1
 	
@@ -130,6 +137,10 @@ IF (!os.file(~~\Button\Env\ELF_PATH.txt))
 	(
 		&PATH4="C:\"
 	)
+	IF "&PATH5"==""
+	(
+		&PATH5="C:\"
+	)
 	IF "&PATH_SELECTED_NUM"==""
 	(
 		&PATH_SELECTED_NUM="PATH_CHECK.1"
@@ -140,6 +151,7 @@ IF (!os.file(~~\Button\Env\ELF_PATH.txt))
 	&PATH_FOLDER2=os.file.path("&PATH2")
 	&PATH_FOLDER3=os.file.path("&PATH3")
 	&PATH_FOLDER4=os.file.path("&PATH4")
+	&PATH_FOLDER5=os.file.path("&PATH4")
 	
 IF (!os.file(~~\Button\Env\SCRIPT_PATH.txt))
 (
@@ -214,13 +226,27 @@ ELSE IF "&CONNECT_TYPE"=="JTAG"
 
 DIALOG
 (
-	HEADER "Power Reprogram V7.1"
+	HEADER "SMART Reprogram V8.0"
 	POS 0. 0. 14. 5.
 	BOX "CORE"
 	POS 1. 1. 10. 1.
 	CORE_CHEK.0: 	CHOOSEBOX "1 CORE" ""
-	CORE_CHEK.1: 	CHOOSEBOX "2 CORE" ""
-	CORE_CHEK.2: 	CHOOSEBOX "3 CORE" ""
+	CORE_CHEK.1: 	CHOOSEBOX "2 CORE"
+	(
+		IF ("&CPU_CHECK"=="TC22"||"&CPU_CHECK"=="TC23")
+		(
+			DIALOG.SET CORE_CHEK.0
+			PRINT "Current core is &CPU_TYPE, This option can not select."
+		)
+	)
+	CORE_CHEK.2: 	CHOOSEBOX "3 CORE"
+	(
+		IF ("&CPU_CHECK"=="TC22"||"&CPU_CHECK"=="TC23")
+		(
+			DIALOG.SET CORE_CHEK.0
+			PRINT "Current core is &CPU_TYPE, This option can not select."
+		)
+	)
 	POS 14. 0. 16. 5.
 	BOX "ETC"
 	POS 15. 1. 14. 1.
@@ -233,19 +259,29 @@ DIALOG
 	BOX "GTM"
 	POS 2. 5. 10. 1.
 	GTM_DEBUG: CHECKBOX "GTM Debug" ""
-	POS 15. 5. 11.
+	POS 17. 5. 10.
 	BUTTON "[:edit]MCS "
 	(
-		GOSUB MCS_SUB
+		DO ~\Button\GTM_mcs.cmm 
 	)
-
-	POS 1. 7. 29. 0.
+	POS 0. 7. 30. 3.
+	BOX "FAVORITE LOAD"
+	POS 2. 8. 10. 1.
+	BUTTON "[:edit]SET_1 "
+	(
+		GOSUB FAVORITE_SUB "SET_1" "LOAD"
+	)
+	POS 17. 8. 10.
+	BUTTON "[:edit]SET_2 "
+	(
+		GOSUB FAVORITE_SUB "SET_2" "LOAD"
+	)
+	
+	POS 1. 10. 30. 0.
 	TEXT "Do you want to use current path&setting?"
-	POS 1. 9. 27.
-	TEXT "Developed by Steve.Han@InfineonKOR"
   
 	;buttons OK (Default) and Change
-	POS 2. 8. 10.
+	POS 2. 11. 10.
 	BUTTON "Yes"
 	(
 		IF DIALOG.BOOLEAN(GTM_DEBUG)
@@ -270,7 +306,7 @@ DIALOG
 		GOSUB ENVIRONMENT_SUB
 		GOSUB REPROGRAM_SUB
 	)
-	POS 16. 8. 10.
+	POS 17. 11. 10.
 	BUTTON    "Change"
 	(
 			IF DIALOG.BOOLEAN(GTM_DEBUG)
@@ -283,23 +319,36 @@ DIALOG
 			)
 		GOSUB ENVIRONMENT_SUB
 		GOSUB CORE_CHEK_SUB
-		GOSUB Change
+		GOSUB CHANGE_SUB
 	)
+
+POS 1. 12. 27.
+	TEXT "Developed by Steve.Han@IFX"
+	
 ;define action when window is closed
-	CLOSE "GOTO CLOSE_END"
-)
+	CLOSE "GOTO CLOSE_END_SUB"
+)	
 ;default core
-IF "&CORE_SELECTED"=="SINGLE"
+&CPU_CHECK=STRING.MID("&CPU_TYPE",0.,4.)
+PRINT "&CPU_CHECK"
+IF !("&CPU_CHECK"=="TC22"||"&CPU_CHECK"=="TC23")
+(
+	IF "&CORE_SELECTED"=="SINGLE"
+	(
+		DIALOG.SET CORE_CHEK.0
+	)
+	ELSE IF "&CORE_SELECTED"=="DOUBLE"
+	(
+		DIALOG.SET CORE_CHEK.1
+	)
+	ELSE IF "&CORE_SELECTED"=="TRIPLE"
+	(
+		DIALOG.SET CORE_CHEK.2
+	)
+)
+ELSE
 (
 	DIALOG.SET CORE_CHEK.0
-)
-ELSE IF "&CORE_SELECTED"=="DOUBLE"
-(
-	DIALOG.SET CORE_CHEK.1
-)
-ELSE IF "&CORE_SELECTED"=="TRIPLE"
-(
-	DIALOG.SET CORE_CHEK.2
 )
 
 IF "&MODE"=="SIMPLE"
@@ -311,145 +360,8 @@ IF "&GTM_SELECT"=="GTM_YES"
 	DIALOG.SET GTM_DEBUG
 )
 STOP
-
-MCS_SUB:
-(
-	DIALOG
-	(
-		HEADER "MCS"
-		POS 0. 0. 8. 6.
-		BOX "CORE"
-		POS 1. 1. 5. 1.
-		MCS_CORE.0: 	CHOOSEBOX "MCS0" ""
-		MCS_CORE.1: 	CHOOSEBOX "MCS1" ""
-		MCS_CORE.2: 	CHOOSEBOX "MCS2" ""
-		MCS_CORE.3: 	CHOOSEBOX "MCS3" ""
-		POS 0. 6. 8.
-		BUTTON    "APPLY"
-		(
-			IF DIALOG.BOOLEAN(MCS_CORE.0)
-			(
-				&MCS_CORE="MCS0"
-				&MCS_CORE_CONFIG="5"
-			)
-			ELSE IF DIALOG.BOOLEAN(MCS_CORE.1)
-			(
-				&MCS_CORE="MCS1"
-				&MCS_CORE_CONFIG="6"
-			)
-			ELSE IF DIALOG.BOOLEAN(MCS_CORE.2)
-			(
-				&MCS_CORE="MCS2"
-				&MCS_CORE_CONFIG="7"
-			)
-			ELSE IF DIALOG.BOOLEAN(MCS_CORE.3)
-			(
-				&MCS_CORE="MCS3"
-				&MCS_CORE_CONFIG="8"
-			)
-			
-			IF DIALOG.BOOLEAN(MCS_CHANNEL.0)
-			(
-				&MCS_CHANNEL_NUMBER="0"
-			)
-			ELSE IF DIALOG.BOOLEAN(MCS_CHANNEL.1)
-			(
-				&MCS_CHANNEL_NUMBER="1"
-			)
-			ELSE IF DIALOG.BOOLEAN(MCS_CHANNEL.2)
-			(
-				&MCS_CHANNEL_NUMBER="2"
-			)
-			ELSE IF DIALOG.BOOLEAN(MCS_CHANNEL.3)
-			(
-				&MCS_CHANNEL_NUMBER="3"
-			)
-			ELSE IF DIALOG.BOOLEAN(MCS_CHANNEL.4)
-			(
-				&MCS_CHANNEL_NUMBER="4"
-			)
-			ELSE IF DIALOG.BOOLEAN(MCS_CHANNEL.5)
-			(
-				&MCS_CHANNEL_NUMBER="5"
-			)
-			ELSE IF DIALOG.BOOLEAN(MCS_CHANNEL.6)
-			(
-				&MCS_CHANNEL_NUMBER="6"
-			)
-			ELSE IF DIALOG.BOOLEAN(MCS_CHANNEL.7)
-			(
-				&MCS_CHANNEL_NUMBER="7"
-			)
-			
-			DIALOG.END
-		)
-		POS 8. 0. 8. 10.
-		BOX "CHANNEL"
-		POS 10. 1. 3. 1.
-		MCS_CHANNEL.0: 	CHOOSEBOX "0" ""
-		MCS_CHANNEL.1: 	CHOOSEBOX "1" ""
-		MCS_CHANNEL.2: 	CHOOSEBOX "2" ""
-		MCS_CHANNEL.3: 	CHOOSEBOX "3" ""
-		MCS_CHANNEL.4: 	CHOOSEBOX "4" ""
-		MCS_CHANNEL.5: 	CHOOSEBOX "5" ""
-		MCS_CHANNEL.6: 	CHOOSEBOX "6" ""
-		MCS_CHANNEL.7: 	CHOOSEBOX "7" ""
-	)
-	
-	
-	IF	"&MCS_CORE"=="MCS0"
-	(
-		DIALOG.SET MCS_CORE.0
-	)
-	ELSE IF	"&MCS_CORE"=="MCS1"
-	(
-		DIALOG.SET MCS_CORE.1
-	)
-	ELSE IF	"&MCS_CORE"=="MCS2"
-	(
-		DIALOG.SET MCS_CORE.2
-	)
-	ELSE IF	"&MCS_CORE"=="MCS3"
-	(
-		DIALOG.SET MCS_CORE.3
-	)
-
-	IF "&MCS_CHANNEL_NUMBER"=="0"
-	(
-		DIALOG.SET MCS_CHANNEL.0
-	)
-	ELSE IF "&MCS_CHANNEL_NUMBER"=="1"
-	(
-		DIALOG.SET MCS_CHANNEL.1
-	)
-	ELSE IF "&MCS_CHANNEL_NUMBER"=="2"
-	(
-		DIALOG.SET MCS_CHANNEL.2
-	)	
-	ELSE IF "&MCS_CHANNEL_NUMBER"=="3"
-	(
-		DIALOG.SET MCS_CHANNEL.3
-	)
-	ELSE IF "&MCS_CHANNEL_NUMBER"=="4"
-	(
-		DIALOG.SET MCS_CHANNEL.4
-	)
-	ELSE IF "&MCS_CHANNEL_NUMBER"=="5"
-	(
-		DIALOG.SET MCS_CHANNEL.5
-	)
-	ELSE IF "&MCS_CHANNEL_NUMBER"=="6"
-	(
-		DIALOG.SET MCS_CHANNEL.6
-	)
-	ELSE IF "&MCS_CHANNEL_NUMBER"=="7"
-	(
-		DIALOG.SET MCS_CHANNEL.7
-	)	
-	
-STOP
-)
-
+ENDDO
+//-----------------------		CORE_CHEK_SUB		-----------------------	
 CORE_CHEK_SUB:
 (
 	IF DIALOG.BOOLEAN(CORE_CHEK.0)
@@ -482,6 +394,7 @@ CORE_CHEK_SUB:
 	)
 	RETURN
 )
+//-----------------------		ENVIRONMENT_SUB		-----------------------	
 ENVIRONMENT_SUB:
 (
 	OPEN #1 ~~\Button\Env\ETC_PATH.txt /CREATE
@@ -494,58 +407,8 @@ ENVIRONMENT_SUB:
 	CLOSE #1	
 	RETURN
 )
-
-REPROGRAM_SUB:
-(	
-	IF "&GTM_SELECT"=="GTM_YES"
-	(	
-	//SYStem.Option PERSTOP OFF
-		ON CMD COREGTM GOSUB coreGTM
-		GOSUB setup_intercom
-		COREGTM SYSTEM.DOWN
-	)
-	IF "&CONNECT_MODIFY"=="DAP2"
-	(
-		SYSTEM.CONFIG.DEBUGPORTTYPE DAP2
-		SYSTEM.CONFIG.DAP.DAPEN.ON
-		SYSTEM.JC 10MHZ
-	)
-	ELSE IF "&CONNECT_MODIFY"=="JTAG"
-	(
-		SYSTEM.CONFIG.DEBUGPORTTYPE JTAG
-	)
-	&CPU_TYPE=CPU()
-	&CPU_TYPE_MID=STRING.MID("&CPU_TYPE",0.,4.)
-	IF "&CPU_TYPE_MID"=="TC27"
-	(
-		DO C:\T32\Button\flash\tc27x_Auto.cmm "&PATH_SELECTED"
-	)
-	ELSE IF "&CPU_TYPE_MID"=="TC23"
-	(
-		DO C:\T32\Button\flash\tc23x_Auto.cmm "&PATH_SELECTED"
-	)
-	ELSE IF "&CPU_TYPE_MID"=="TC26"
-	(
-		DO C:\T32\Button\flash\tc26x_Auto.cmm "&PATH_SELECTED"
-	)
-	ELSE IF "&CPU_TYPE_MID"=="TC29"
-	(
-		DO C:\T32\Button\flash\tc29x_Auto.cmm "&PATH_SELECTED"
-	)
-	PRINT "&PATH_SELECTED flash complete./&CPU_TYPE"
-
-	IF &CURRNENT_PATH_USE==TRUE()
-	(
-		GOSUB END_PROCESS2
-	)
-	ELSE
-	(
-		GOSUB END_PROCESS1
-	)
-)
-
-	
-Change:
+//-----------------------		CHANGE_SUB		-----------------------	
+CHANGE_SUB:
 	DIALOG.END
 	&CURRNENT_PATH_USE=FALSE()
 	DIALOG
@@ -553,12 +416,43 @@ Change:
 //-----------------------		PATH_SELECT		-----------------------	
 		POS 1. 0. 11.
 		LINE "PATH_SELECT"
-		HEADER "Change with reprogram"
+		HEADER "SMART Reprogram V8.0-HanSungsu"
 		POS 1. 1. 6.
-		PATH_CHECK.1: CHOOSEBOX "PATH_1" ""
-		PATH_CHECK.2: CHOOSEBOX "PATH_2" ""
-		PATH_CHECK.3: CHOOSEBOX "PATH_3" ""
-		PATH_CHECK.4: CHOOSEBOX "PATH_4" ""
+		PATH_CHECK.1: CHOOSEBOX "PATH_1"
+		(
+			&PATH_SELECTED_NUM="PATH_CHECK.1"
+			PRINT "&PATH_SELECTED_NUM selected"
+		)
+		PATH_CHECK.2: CHOOSEBOX "PATH_2"
+		(
+			&PATH_SELECTED_NUM="PATH_CHECK.2"
+			PRINT "&PATH_SELECTED_NUM selected"
+		)
+		PATH_CHECK.3: CHOOSEBOX "PATH_3"
+		(
+			&PATH_SELECTED_NUM="PATH_CHECK.3"
+			PRINT "&PATH_SELECTED_NUM selected"
+		)
+		PATH_CHECK.4: CHOOSEBOX "PATH_4"
+		(
+			&PATH_SELECTED_NUM="PATH_CHECK.4"
+			PRINT "&PATH_SELECTED_NUM selected"
+		)
+		POS 1. 5. 6. 
+			TEXT "FAVORITE"
+		;PATH_CHECK.5: CHOOSEBOX "PATH_F"
+		;(
+		;	IF &VERI_FAVORITE==TRUE()
+		;	(
+		;	&PATH_SELECTED_NUM="PATH_CHECK.5"
+		;	PRINT "&PATH_SELECTED_NUM selected"
+		;	)
+		;	else
+		;	(
+		;		DIALOG.SET &PATH_SELECTED_NUM
+		;	)
+			;//DIALOG.Set myMsg "Test started"
+		;)		
 		
 		POS 8. 1. 35.
 		PATH_1:   EDIT "*.elf"
@@ -579,6 +473,10 @@ Change:
 		PATH_4:   EDIT "*.elf"
 		(;get the user input when the cursor leaves the EDIT control
 			&PATH_CHANGE4=DIALOG.STRing(PATH_4)
+		)
+		POS 8. 5. 35.
+		PATH_5:   EDIT "*.elf"
+		(
 		)
 		
 		POS 45. 1. 11.
@@ -609,33 +507,34 @@ Change:
 			DIALOG.SetFile PATH_4  &PATH_FOLDER4\*.elf
 			DIALOG.SET PATH_CHECK.4
 		)
+
 //-----------------------		SCRIPT_SELECT		-----------------------
-		POS 1. 5. 15.
+		POS 1. 6. 15.
 		LINE "WINDOW_SCRIPT_SELECT"
-		POS 1. 6. 6.
+		POS 1. 7. 6.
 		SCRIPT_CHECK.0: CHOOSEBOX "CURRENT" ""
 		SCRIPT_CHECK.1: CHOOSEBOX "SCRIPT_1" ""
 		SCRIPT_CHECK.2: CHOOSEBOX "SCRIPT_2" ""
 		
-		POS 8. 7. 35.
+		POS 8. 8. 35.
 		SCRIPT_1:   EDIT "*.elf"
 		(;get the user input when the cursor leaves the EDIT control
 			&SCRIPT_CHANGE1=DIALOG.STRing(SCRIPT_1)
 		)
-		POS 8. 8. 35.
+		POS 8. 9. 35.
 		SCRIPT_2:   EDIT "*.elf"
 		(;get the user input when the cursor leaves the EDIT control
 			&SCRIPT_CHANGE2=DIALOG.STRing(SCRIPT_2)
 		)
 		
-		POS 45. 7. 11.
+		POS 45. 8. 11.
 		BUTTON "[:edit]SCRIPT1_CHANGE "
 		(
 			
 			DIALOG.SetFile SCRIPT_1  &SCRIPT_FOLDER1\*.cmm
 			DIALOG.SET SCRIPT_CHECK.1
 		)
-		POS 45. 8. 11.
+		POS 45. 9. 11.
 		BUTTON "[:edit]SCRIPT2_CHANGE "
 		(
 			
@@ -644,19 +543,33 @@ Change:
 		)	
 //-----------------------		CONNECTOR_SELECT		-----------------------
 		;choosebox group for Connector 
-		POS 1. 9. 15.
+		POS 1. 10. 15.
 		LINE "CONNECTOR_SELECT"
-		POS 1. 10. 10.
+		POS 1. 11. 10.
 		Option_Connect.1: CHOOSEBOX "DAP2" ""
 		Option_Connect.2: CHOOSEBOX "JTAG" ""
-//-----------------------		CPU_SELECT		-----------------------
-		POS 45. 9. 11.
-		BUTTON "[:edit]CPU_CHANGE "
+//-----------------------		CONNECTOR_SELECT		-----------------------		
+		POS 8. 13. 30. 3.
+		BOX "FAVORITE SAVE"
+		POS 10. 14. 10. 1.
+		BUTTON "[:edit]SET_1"
 		(
-			SYS.CPU *
+			GOSUB FAVORITE_SUB "SET_1" "SAVE"
+		)
+		POS 26. 14. 10.
+		BUTTON "[:edit]SET_2"
+		(	
+			GOSUB FAVORITE_SUB "SET_2" "SAVE"
+		)
+//-----------------------		CPU_SELECT		-----------------------
+		POS 45. 10. 11.
+		BUTTON "[:edit]CPU_CHANGE "
+		(			
+			SYS.CPU
+			&CPU_TYPE_MODIFY=CPU()
 		)
 //-----------------------		OK_SELECT		-----------------------		
-		POS 45. 10. 11.
+		POS 45. 12. 11.
 		DEFBUTTON "OK" 
 		(		
 			//**********************		PATH_CREATION		**********************
@@ -671,6 +584,7 @@ Change:
 					WRITE #1 "&PATH2"
 					WRITE #1 "&PATH3"
 					WRITE #1 "&PATH4"
+					WRITE #1 "&PATH5"
 					WRITE #1 "PATH_CHECK.1"
 					CLOSE #1
 				)
@@ -683,6 +597,7 @@ Change:
 					WRITE #1 "&PATH_CHANGE2"
 					WRITE #1 "&PATH3"
 					WRITE #1 "&PATH4"
+					WRITE #1 "&PATH5"
 					WRITE #1 "PATH_CHECK.2"					
 					CLOSE #1
 				)
@@ -695,6 +610,7 @@ Change:
 					WRITE #1 "&PATH2"
 					WRITE #1 "&PATH_CHANGE3"
 					WRITE #1 "&PATH4"
+					WRITE #1 "&PATH5"
 					WRITE #1 "PATH_CHECK.3"
 					CLOSE #1
 				)
@@ -707,9 +623,23 @@ Change:
 					WRITE #1 "&PATH2"
 					WRITE #1 "&PATH3"
 					WRITE #1 "&PATH_CHANGE4"
+					WRITE #1 "&PATH5"
 					WRITE #1 "PATH_CHECK.4"
 					CLOSE #1
-				)				
+				)
+				ELSE IF DIALOG.BOOLEAN(PATH_CHECK.5)
+				(
+					&PATH_SELECTED="&PATH_CHANGE5"
+					OPEN #1 ~~\Button\Env\ELF_PATH.txt /CREATE
+					WRITE #1 "&PATH_SELECTED"
+					WRITE #1 "&PATH1"
+					WRITE #1 "&PATH2"
+					WRITE #1 "&PATH3"
+					WRITE #1 "&PATH4"
+					WRITE #1 "&PATH_CHANGE5"
+					WRITE #1 "PATH_CHECK.5"
+					CLOSE #1
+				)					
 			)
 			
 			IF (STRING.FIND("cmm","&SCRIPT_CHANGE1")||STRING.FIND("cmm","&SCRIPT_CHANGE2"))
@@ -741,7 +671,7 @@ Change:
 			(
 				&CONNECT_MODIFY="JTAG"
 			)
-			IF (("&CPU_TYPE_MODIFY"!="&CPU_TYPE")||(!os.file(~~\Button\Env\CPU_TYPE.txt)))
+			IF (("&CPU_TYPE"=="")||("&CPU_TYPE_MODIFY"!="&CPU_TYPE")||(!os.file(~~\Button\Env\CPU_TYPE.txt)))
 			(		
 				OPEN #1 ~~\Button\Env\CPU_TYPE.txt /CREATE
 				WRITE #1 CPU()
@@ -754,117 +684,205 @@ Change:
 				WRITE  #1 "&CONNECT_MODIFY"
 				CLOSE #1
 			)
+			
 			GOSUB REPROGRAM_SUB
 		)
 //-----------------------		CLOSE_SELECT		-----------------------		
 	  ;define action when window is closed
-		CLOSE "GOTO CLOSE_END"
+		CLOSE "GOTO CLOSE_END_SUB"
 	)
 //-----------------------		DEFAULT_ACTION		-----------------------			
 	DIALOG.SetFile PATH_1  "&PATH1"
 	DIALOG.SetFile PATH_2  "&PATH2"
 	DIALOG.SetFile PATH_3  "&PATH3"
 	DIALOG.SetFile PATH_4  "&PATH4"
+	
+	IF &VERI_FAVORITE==TRUE()
+	(
+	DIALOG.SetFile PATH_5  "&PATH4"
+	)
+	ELSE
+	(
+	DIALOG.SetFile PATH_5  "NO_SELECTED"
+	)
+	
 	DIALOG.SetFile SCRIPT_1  "&SCRIPT1"
 	DIALOG.SetFile SCRIPT_2  "&SCRIPT2"	
 	DIALOG.SET &PATH_SELECTED_NUM
 	DIALOG.SET SCRIPT_CHECK.0
 	DIALOG.SET &CONNECT_TYPE_LAST
 	STOP
-//-----------------------		END_PROCESS1		---------------------------	
-END_PROCESS1:
+ENDDO	
+	
+REPROGRAM_SUB:
+(	
+	IF "&GTM_SELECT"=="GTM_YES"
+	(	
+	//SYStem.Option PERSTOP OFF
+		ON CMD COREGTM GOSUB coreGTM
+		GOSUB setup_intercom
+		COREGTM SYSTEM.DOWN
+	)
+	IF "&CONNECT_MODIFY"=="DAP2"
+	(
+		SYSTEM.CONFIG.DEBUGPORTTYPE DAP2
+		SYSTEM.CONFIG.DAP.DAPEN.ON
+		SYSTEM.JC 10MHZ
+	)
+	ELSE IF "&CONNECT_MODIFY"=="JTAG"
+	(
+		SYSTEM.CONFIG.DEBUGPORTTYPE JTAG
+	)
+	&CPU_TYPE=CPU()
+	&CPU_TYPE_MID=STRING.MID("&CPU_TYPE",0.,4.)
+	IF "&CPU_TYPE_MID"=="TC27"
+	(
+		DO C:\T32\Button\flash\tc27x_Auto.cmm "&PATH_SELECTED"
+	)
+	ELSE IF "&CPU_TYPE_MID"=="TC23"
+	(
+		DO C:\T32\Button\flash\tc23x_Auto.cmm "&PATH_SELECTED"
+	)
+	ELSE IF "&CPU_TYPE_MID"=="TC22"
+	(
+		DO C:\T32\Button\flash\tc22x_Auto.cmm "&PATH_SELECTED"
+	)
+	ELSE IF "&CPU_TYPE_MID"=="TC26"
+	(
+		DO C:\T32\Button\flash\tc26x_Auto.cmm "&PATH_SELECTED"
+	)
+	ELSE IF "&CPU_TYPE_MID"=="TC29"
+	(
+		DO C:\T32\Button\flash\tc29x_Auto.cmm "&PATH_SELECTED"
+	)
+	PRINT "&PATH_SELECTED flash complete./&CPU_TYPE"
+
+	IF &CURRNENT_PATH_USE==TRUE()
+	(
+		GOSUB END_PROCESS2_SUB
+	)
+	ELSE
+	(
+		GOSUB END_PROCESS1_SUB
+	)
+)
+ENDDO
+
+
+//-----------------------		END_PROCESS1_SUB		---------------------------	
+END_PROCESS1_SUB:
 IF DIALOG.BOOLEAN(SCRIPT_CHECK.0)==FALSE()
 (
 	WINCLEAR
 	DO &SCRIPT_SELECTED win
 )
 SYSTEM.DOWN
-
 SYSTEM.O.DUALPORT.ON
 SYSTEM.O.IMASKASM.ON
 SYSTEM.O.IMASKHLL.ON
 SETUP.VAR %SPOTLIGHT
 //SYStem.Option PERSTOP OFF
-
-
-GOSUB END_PROCESS2
+GOSUB END_PROCESS2_SUB
 ENDDO
 
-//-----------------------		END_PROCESS2		---------------------------
-END_PROCESS2:
-DIALOG.END
-SYSTEM.DOWN
-IF "&CONNECT_MODIFY"=="DAP2"
+//-----------------------		END_PROCESS2_SUB		---------------------------
+END_PROCESS2_SUB:
 (
-	SYSTEM.CONFIG.DEBUGPORTTYPE DAP2
-	SYSTEM.CONFIG.DAP.DAPEN.ON
-	SYSTEM.JC 20MHZ
-)
-ELSE IF "&CONNECT_MODIFY"=="JTAG"
-(
-	SYSTEM.CONFIG.DEBUGPORTTYPE JTAG
-)
-IF "&CPU_TYPE_MID"!="TC23"
-(
-	IF &SINGLE_CORE_T==TRUE()
+	DIALOG.END
+	SYSTEM.DOWN
+	IF "&CONNECT_MODIFY"=="DAP2"
 	(
-		Core.assign  1.
+		SYSTEM.CONFIG.DEBUGPORTTYPE DAP2
+		SYSTEM.CONFIG.DAP.DAPEN.ON
+		SYSTEM.JC 20MHZ
 	)
-	ELSE IF &DOUBLE_CORE_T==TRUE()
+	ELSE IF "&CONNECT_MODIFY"=="JTAG"
 	(
-		
-		Core.assign  1. 2.
-		IF &MULTI_CORE_WINDOW_T==TRUE()
+		SYSTEM.CONFIG.DEBUGPORTTYPE JTAG
+	)
+	IF ("&CPU_TYPE_MID"!="TC22"&&"&CPU_TYPE_MID"!="TC23")
+	(
+		IF &SINGLE_CORE_T==TRUE()
 		(
-			d.l /core 0
-			d.l /core 1
+			Core.assign  1.
 		)
-		
+		ELSE IF &DOUBLE_CORE_T==TRUE()
+		(
+			
+			Core.assign  1. 2.
+			IF &MULTI_CORE_WINDOW_T==TRUE()
+			(
+				d.l /core 0
+				d.l /core 1
+			)
+			
+		)
+		ELSE
+		(
+			Core.assign  1. 2. 3.
+			IF &MULTI_CORE_WINDOW_T==TRUE()
+			(
+				d.l /core 0
+				d.l /core 1
+				d.l /core 2
+			)
+		)
+	)
+
+	IF "&MODE"=="COMPLEX"
+	(
+		SYSTEM.O.DUALPORT.ON
+		SYSTEM.O.IMASKASM.ON
+		SYSTEM.O.IMASKHLL.ON
+		SETUP.VAR %SPOTLIGHT
+		//SYStem.Option PERSTOP OFF
+	)
+
+	IF &CORE_STATE_T==TRUE()
+	(
+		IF WINDOW.NAME("B::TargetSystem.state DEFault")==FALSE()
+		(
+			TargetSystem.state DEFault
+		)
+		CORE.SHOWACTIVE
+	)
+	IF "&GTM_SELECT"=="GTM_YES"
+	(
+		DO C:\T32\Button\GTM.cmm &MCS_CORE &MCS_CORE_CONFIG &MCS_CHANNEL_NUMBER &CPU_TYPE &CONNECT_MODIFY
 	)
 	ELSE
 	(
-		Core.assign  1. 2. 3.
-		IF &MULTI_CORE_WINDOW_T==TRUE()
-		(
-			d.l /core 0
-			d.l /core 1
-			d.l /core 2
-		)
+		SYSTEM.UP
 	)
-)
-
-IF "&MODE"=="COMPLEX"
-(
-	SYSTEM.O.DUALPORT.ON
-	SYSTEM.O.IMASKASM.ON
-	SYSTEM.O.IMASKHLL.ON
-	SETUP.VAR %SPOTLIGHT
-	//SYStem.Option PERSTOP OFF
-)
-
-IF &CORE_STATE_T==TRUE()
-(
-	IF WINDOW.NAME("B::TargetSystem.state DEFault")==FALSE()
+	IF &VERI_FAVORITE==TRUE()
 	(
-		TargetSystem.state DEFault
+		OPEN #1 ~~\Button\Env\CPU_TYPE.txt /CREATE
+		WRITE #1 "&CPU_TYPE_FAVORITE"
+		CLOSE #1
+		
+		OPEN  #1 ~~\Button\Env\CONNECT_TYPE.txt /CREATE
+		WRITE  #1 "&CONNECT_TYPE_FAVORITE"
+		CLOSE #1
+		
+		OPEN #1 ~~\Button\Env\ELF_PATH.txt /CREATE
+		WRITE #1 "&PATH_SELECTED_FAVORITE"
+		WRITE #1 "&PATH1"
+		WRITE #1 "&PATH2"
+		WRITE #1 "&PATH3"
+		WRITE #1 "&PATH4"
+		WRITE #1 "&PATH5"
+		WRITE #1 "&PATH_SELECTED_NUM_FAVORITE"					
+		CLOSE #1
 	)
-	CORE.SHOWACTIVE
-)
-IF "&GTM_SELECT"=="GTM_YES"
-(
-	DO C:\T32\Button\GTM.cmm &MCS_CORE &MCS_CORE_CONFIG &MCS_CHANNEL_NUMBER &CPU_TYPE &CONNECT_MODIFY
-)
-ELSE
-(
-	SYSTEM.UP
 )
 ENDDO
-//-----------------------		CLOSE_END		---------------------------
-CLOSE_END:
+
+//-----------------------		CLOSE_END_SUB		---------------------------
+CLOSE_END_SUB:
 DIALOG.END
 ENDDO
 
-
+//-----------------------		COMMUNICATION_SUB		---------------------------
 setup_intercom:
 (
   &portTC0=FORMAT.DECIMAL(1.,INTERCOM.PORT())
@@ -887,4 +905,69 @@ coreTC0:
   &params ; execute on this GUI
   RETURN
 )
+//-----------------------		FAVORITE_SUB		---------------------------
+FAVORITE_SUB:
+(
+	LOCAL &SETTING_VALUE &SAVE_LOAD_FAVORITE
+	ENTRY &SETTING_VALUE &SAVE_LOAD_FAVORITE
+	
+	IF &SAVE_LOAD_FAVORITE=="SAVE"
+	(
+		&CPU_TYPE_FAVORITE=CPU()
+		IF DIALOG.BOOLEAN(PATH_CHECK.1)
+		(
+			&PATH_SELECTED_NUM_FAVORITE="PATH_CHECK.1"
+			&PATH_SELECTED_FAVORITE=DIALOG.STRing(PATH_1)
+		)
+		ELSE IF DIALOG.BOOLEAN(PATH_CHECK.2)
+		(
+			&PATH_SELECTED_NUM_FAVORITE="PATH_CHECK.2"
+			&PATH_SELECTED_FAVORITE=DIALOG.STRing(PATH_2)
+		)
+		ELSE IF DIALOG.BOOLEAN(PATH_CHECK.3)
+		(
+			&PATH_SELECTED_NUM_FAVORITE="PATH_CHECK.3"
+			&PATH_SELECTED_FAVORITE=DIALOG.STRing(PATH_3)
+		)
+		ELSE IF DIALOG.BOOLEAN(PATH_CHECK.4)
+		(
+			&PATH_SELECTED_NUM_FAVORITE="PATH_CHECK.4"
+			&PATH_SELECTED_FAVORITE=DIALOG.STRing(PATH_4)
+		)
+		ELSE IF DIALOG.BOOLEAN(PATH_CHECK.5)
+		(
+			&PATH_SELECTED_NUM_FAVORITE="PATH_CHECK.5"	
+			&PATH_SELECTED_FAVORITE=DIALOG.STRing(PATH_5)
+		)
 
+		IF DIALOG.BOOLEAN(Option_Connect.1)
+		(
+			&CONNECT_TYPE_FAVORITE="DAP2"
+		)
+		ELSE IF DIALOG.BOOLEAN(Option_Connect.2)
+		(
+			&CONNECT_TYPE_FAVORITE="JTAG"
+		)			
+		DO C:\T32\Button\Favorit.cmm &SETTING_VALUE "SAVE" &CPU_TYPE_FAVORITE &CONNECT_TYPE_FAVORITE &PATH_SELECTED_FAVORITE &PATH_SELECTED_NUM_FAVORITE
+		RETURN
+	)
+	
+	IF &SAVE_LOAD_FAVORITE=="LOAD"
+	(
+		DO C:\T32\Button\Favorit.cmm &SETTING_VALUE &SAVE_LOAD_FAVORITE
+		ENTRY &VERI_FAVORITE &CPU_TYPE_FAVORITE &CONNECT_TYPE_FAVORITE &PATH_SELECTED_FAVORITE &PATH_SELECTED_NUM_FAVORITE
+		IF &VERI_FAVORITE==TRUE()
+		(		
+			&CPU_TYPE="&CPU_TYPE_FAVORITE"
+			&CONNECT_TYPE="&CONNECT_TYPE_FAVORITE"
+			&PATH_SELECTED="&PATH_SELECTED_FAVORITE"
+			;&PATH_SELECTED_NUM="PATH_CHECK.5"
+			PRINT "&CPU_TYPE &CONNECT_TYPE &PATH_SELECTED &PATH_SELECTED_NUM"
+		)
+		ELSE
+		(
+			PRINT "PROBLEM"
+		)
+	)
+)
+//---------------------------------------------------------------------------	

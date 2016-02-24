@@ -12,43 +12,69 @@
 ;----------------------------------------------------------------------
 ; Choose hex mode as default for input values
 ;----------------------------------------------------------------------
-  RADIX Hex
+  RADIX hex
 
 
 ;----------------------------------------------------------------------
 ; Add some extra buttons to the toolbar
 ;----------------------------------------------------------------------
-
-  MENU.ReProgram
-  (
-     ADD
-     TOOLBAR
-     (
-        SEPARATOR
-        TOOLITEM  "Source/List"      ":list"     "List.auto"
-        TOOLITEM  "Memory Dump"      ":dump"     "Data.dump"
-        TOOLITEM  "Register"         ":reg"      "Register.view"
-        SEPARATOR
-        TOOLITEM  "Watch"            ":varwatch" "Var.Watch"
-        TOOLITEM  "Stack"            ":varframe" "Frame.view /Locals /Caller"
-        TOOLITEM  "Automatic Watch"  ":varref"   "Var.Ref"
-        SEPARATOR
-        TOOLITEM  "List Breakpoints" ":break"    "Break.List"
-        TOOLITEM  "List Symbols"     ":symbols"  "sYmbol.Browse"
-        TOOLITEM  "System Settings"  ":config"   "SYStem.state"
-		SEPARATOR
-		TOOLITEM  "ReProgram"  	     "RP"	 "Do C:\T32\Button\ReProgram.cmm"
-		TOOLITEM  "Reset&GO"	     "RG"	 "Do C:\T32\Button\Reset_go.cmm"
-		TOOLITEM  "Reset"	  		 "RS"	 "Do C:\T32\Button\Reset.cmm"
-		SEPARATOR
-		TOOLITEM  "Window save"  	 "WS"	 "Do C:\T32\Button\WS.cmm"
-		TOOLITEM  "Window load"	     "WL"	 "Do C:\T32\Button\WL.cmm"
-		TOOLITEM  "Direct save"  	 "DS"	 "Do C:\T32\Button\WO.cmm"
-		SEPARATOR
-		TOOLITEM  "GTM_config"	 	 "GM"	 "Do C:\T32\Button\GTM_mcs.cmm"
+	&STRING=string.mid(title(),22.,3.)				
+	PRINT "title = &STRING"
+	
+	IF "&STRING"!="GTM"
+	(
+	  MENU.reprogram
+	  (		
+			ADD
+			TOOLBAR
+			(
+				TOOLITEM  "Source/List"      ":list"     "List.auto"
+				TOOLITEM  "Memory Dump"      ":dump"     "Data.dump"
+				TOOLITEM  "Register"         ":reg"      "Register.view"
+				SEPARATOR
+				TOOLITEM  "Watch"            ":varwatch" "Var.Watch"
+				TOOLITEM  "Stack"            ":varframe" "Frame.view /Locals /Caller"
+				TOOLITEM  "Automatic Watch"  ":varref"   "Var.Ref"
+				SEPARATOR
+				TOOLITEM  "List Breakpoints" ":break"    "Break.List"
+				TOOLITEM  "List Symbols"     ":symbols"  "sYmbol.Browse"
+				TOOLITEM  "System Settings"  ":config"   "SYStem.state"
+				SEPARATOR
+				TOOLITEM  "ReProgram"  	     "RP"	 "Do C:\T32\Button\ReProgram.cmm"
+				TOOLITEM  "Reset&GO"	     "RG"	 "Do C:\T32\Button\Reset_go.cmm"
+				TOOLITEM  "Reset"	  		 "RS"	 "Do C:\T32\Button\Reset.cmm"
+				SEPARATOR
+				TOOLITEM  "Window save"  	 "WS"	 "Do C:\T32\Button\WS.cmm"
+				TOOLITEM  "Window load"	     "WL"	 "Do C:\T32\Button\WL.cmm"
+				TOOLITEM  "Direct save"  	 "DS"	 "Do C:\T32\Button\WO.cmm"
+				SEPARATOR
+				TOOLITEM  "GTM_config"	 	 "GM"	 "Do C:\T32\Button\GTM_mcs.cmm"
+			)
+		)
+	)
+	ELSE
+	(
+	  MENU.reprogram
+	  (		
+			ADD
+			TOOLBAR
+			(
+				TOOLITEM  "Source/List"      ":list"     "List.auto"
+				TOOLITEM  "Memory Dump"      ":dump"     "Data.dump"
+				TOOLITEM  "Register"         ":reg"      "Register.view"
+				SEPARATOR
+				TOOLITEM  "Watch"            ":varwatch" "Var.Watch"
+				TOOLITEM  "Stack"            ":varframe" "Frame.view /Locals /Caller"
+				TOOLITEM  "Automatic Watch"  ":varref"   "Var.Ref"
+				SEPARATOR
+				TOOLITEM  "List Breakpoints" ":break"    "Break.List"
+				TOOLITEM  "List Symbols"     ":symbols"  "sYmbol.Browse"
+				TOOLITEM  "System Settings"  ":config"   "SYStem.state"
+			)
+		)
+	)
         
-     )
-  )
+    
 
 
 ;----------------------------------------------------------------------

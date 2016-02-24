@@ -1,0 +1,15 @@
+// T32 Mon Nov 30 10:29:16 2015
+
+ B::
+ 
+ TOOLBAR ON
+ STATUSBAR ON
+ FramePOS 12.5 7.1429 125. 39.
+ WinPAGE.RESet
+ 
+ WinPAGE.Create P000
+ WinCLEAR
+ 
+ WinPAGE.select P000
+ 
+ ENDDO

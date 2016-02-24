@@ -6,25 +6,21 @@ GOSUB setup_intercom
 
 ON CMD CORETC0 GOSUB coreTC0
 ON CMD COREGTM GOSUB coreGTM
-
-IF CPUIS("*E")||CPUIS("*F")
-(
-	CORETC0 MCDS.ON
-	CORETC0 MCDS.SOURCE CpuMux1 Core OTGM
-)
+ON CMD COREALL GOSUB coreAll
+GOSUB other_gui
 COREGTM SYSTEM.DOWN
 
-; ; set up synchronization between GUIs
-//CORETC0 SYStem.Option PERSTOP Off //needs to be enabled, GTM acts as periphery
+;set up synchronization between GUIs
+CORETC0 SYStem.Option PERSTOP Off //needs to be enabled, GTM acts as periphery
 CORETC0 SYnch.Connect &addressGTM
 COREGTM SYnch.Connect &addressTC0
 
-CORETC0 SYnch.MasterBreak ON // required
-CORETC0 SYnch.SlaveBreak ON // required
-CORETC0 SYnch.MasterGo ON    // optional, also served by PERSTOP
-CORETC0 SYnch.SlaveGo ON    // optional, also served by PERSTOP
-CORETC0 SYnch.SlaveSystemMode ON    // optional, also served by PERSTOP
-CORETC0 SYnch.MasterSystemMode ON    // optional, also served by PERSTOP
+CORETC0 SYnch.MasterBreak ON 			// required
+CORETC0 SYnch.SlaveBreak ON 			// required
+CORETC0 SYnch.MasterGo ON   		 	// optional, also served by PERSTOP
+CORETC0 SYnch.SlaveGo ON    			// optional, also served by PERSTOP
+CORETC0 SYnch.SlaveSystemMode ON    	// optional, also served by PERSTOP
+CORETC0 SYnch.MasterSystemMode ON   	// optional, also served by PERSTOP
 
 COREGTM SYnch.SlaveBreak ON  // required
 COREGTM SYnch.MasterBreak ON  // required
@@ -36,17 +32,9 @@ COREGTM SYnch.MasterSystemMode ON    // optional, also served by PERSTOP
 COREGTM SYSTEM.CPU &CPU_TYPE		// Select CPU
 
 COREGTM SYSTEM.CONFIG.CORE &MCS_CORE_CONFIG. 1.		// Select GTM Module of TC277TE CPU
-COREGTM SYStem.CONFIG.MCSModule &MCS_CORE	// Select MCS channel
+COREGTM SYStem.CONFIG.MCSModule &MCS_CORE			// Select MCS Core
+COREGTM CORE.select 1 								// Select MCS channel
 
-
-
-COREGTM SETUP.Var %SpotLight		// Optional
-
-COREGTM Break.Select Program Onchip 	// Optional
-IF CPUIS("*E")||CPUIS("*F")
-(
-COREGTM TrOnchip.RESet
-)
 
 IF "&CONNECT_TYPE"=="DAP2"
 (
@@ -63,25 +51,42 @@ ELSE IF "&CONNECT_TYPE"=="JTAG"
 	COREGTM SYSTEM.CONFIG.DEBUGPORTTYPE JTAG
 )
 
-IF CPUIS("*E")||CPUIS("*F")
+IF CHIP.EmulationDevice()
 (
+	COREALL MCDS.SOURCE NONE
+	COREGTM MCDS.ON
+	COREGTM MCDS.SOURCE CpuMux1 Core OTGM
+	COREALL MCDS.TimeStamp ON
+	COREALL CLOCK.OSCillator 20.MHz
+	COREALL CLOCK.ON
+	COREALL Trace.METHOD.Onchip
+	COREALL Trace.Mode Stack
+	COREGTM TrOnchip.RESet
+	COREGTM TrOnchip.OTGB2 SELECT ARU
+	COREGTM TrOnchip.ARU.Access0 0x77
+	COREGTM TrOnchip.ARU.Access1 0x78
+
 	COREGTM TrOnchip.OTGB0 SELECT MCA
+	COREGTM TrOnchip.OTGB1 SELECT IOS
+	COREGTM TrOnchip.OTGB1 LowBMType ATOM
+	COREGTM TrOnchip.OTGB1 HighBMType ATOM
+	COREGTM TrOnchip.OTGB1 LowBMInst 0
+	COREGTM TrOnchip.OTGB1 HighBMInst 3
 	COREGTM TrOnchip.MCS Module &MCS_CORE
 	COREGTM TrOnchip.MCS Channel &MCS_CHANNEL
 	COREGTM TrOnchip.MCS A ON
 )
+
 COREGTM SYSTEM.O.DUALPORT.ON
 COREGTM SYSTEM.O.IMASKASM.ON
 COREGTM SYSTEM.O.IMASKHLL.ON
-IF CPUIS("*E")||CPUIS("*F")
-(
-CORETC0 MAP.BOnchip 0x0--0xffffffff // force onchip-breakpoints
-)
 CORETC0 SYStem.UP
 COREGTM SYStem.Mode Attach
-//CORETC0 Break
-//COREGTM Break
-
+COREGTM Break.direct
+COREGTM SETUP.Var %SpotLight			// Optional
+COREGTM Break.Select Program Onchip 	// Optional
+CORETC0 MAP.BOnchip 0x0--0xffffffff 	// force onchip-breakpoints
+COREGTM CORE.select 1
 ENDDO
 setup_intercom:
 (
@@ -103,5 +108,23 @@ coreTC0:
   LOCAL &params
   ENTRY %Line &params
   &params ; execute on this GUI
+  RETURN
+)
+coreAll:
+(
+  LOCAL &params
+  ENTRY %LINE &params
+  GOSUB coreTC0 &params
+  GOSUB coreGTM &params
+  RETURN
+)
+other_gui:
+(
+  WAIT INTERCOM.PING(&addressGTM) 1.s
+  IF !INTERCOM.PING(&addressGTM)
+  (
+    PRINT "no debugger / GUI at &addressGTM detected, launching second GUI..."  
+  )
+  WAIT INTERCOM.PING(&addressGTM) 1.s
   RETURN
 )

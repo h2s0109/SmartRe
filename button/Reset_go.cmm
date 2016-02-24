@@ -2,4 +2,5 @@
 b::
 Sys.d
 Sys.u
+//wait 1.s
 go

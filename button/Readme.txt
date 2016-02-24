@@ -14,4 +14,8 @@ V4.1    Simple reprogram is added.(It doesn`t effect to current setting)
 V5.0 	GTM debugging support.
 V6.0 	Easy window system introduced.
 V6.1 	Extended ELF path save line. 2->4.
-V7.0	Quick save functionality introduced.		
+V7.0	Quick window save and load functionality introduced.		
+V8.0	Program name changed.		
+		Favorite function added.
+		program more stabilized.
+		TC22x, TC23x support.
