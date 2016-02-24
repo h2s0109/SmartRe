@@ -19,3 +19,4 @@ V8.0	Program name changed.
 		Favorite function added.
 		program more stabilized.
 		TC22x, TC23x support.
+V8.1 	Critical bug is fixed.

@@ -16,7 +16,7 @@ STORE ~~\Button\Env\Store_window.cmm win
 PRINT "Working windows store complete."
 
 LOCAL &FIRST_USER
-LOCAL &CURRNENT_PATH_USE
+LOCAL &CURRENT_PATH_USE
 
 LOCAL &PATH_SELECTED
 LOCAL &PATH1
@@ -38,6 +38,7 @@ LOCAL &PATH_FOLDER4
 LOCAL &PATH_FOLDER5
 LOCAL &PATH_SELECTED
 LOCAL &PATH_SELECTED_NUM
+LOCAL &PATH_SELECTED_NUM_2
 
 LOCAL &SCRIPT1
 LOCAL &SCRIPT2
@@ -109,6 +110,7 @@ IF (!os.file(~~\Button\Env\ELF_PATH.txt))
 	WRITE #1 "C:\"
 	WRITE #1 "C:\"
 	WRITE #1 "PATH_CHECK.1"
+	WRITE #1 "PATH_1"
 	CLOSE #1
 )
 	OPEN  #1 ~~\Button\Env\ELF_PATH.txt /READ
@@ -117,8 +119,8 @@ IF (!os.file(~~\Button\Env\ELF_PATH.txt))
 	READ  #1 %line &PATH2
 	READ  #1 %line &PATH3
 	READ  #1 %line &PATH4
-	READ  #1 %line &PATH5
 	READ  #1 %line &PATH_SELECTED_NUM
+	READ  #1 %line &PATH_SELECTED_NUM_2
 	CLOSE #1
 	
 	IF "&PATH1"==""
@@ -269,12 +271,12 @@ DIALOG
 	POS 2. 8. 10. 1.
 	BUTTON "[:edit]SET_1 "
 	(
-		GOSUB FAVORITE_SUB "SET_1" "LOAD"
+		GOSUB FAVORITE_SAVE_LOAD_SUB "SET_1" "LOAD"
 	)
 	POS 17. 8. 10.
 	BUTTON "[:edit]SET_2 "
 	(
-		GOSUB FAVORITE_SUB "SET_2" "LOAD"
+		GOSUB FAVORITE_SAVE_LOAD_SUB "SET_2" "LOAD"
 	)
 	
 	POS 1. 10. 30. 0.
@@ -292,7 +294,7 @@ DIALOG
 		(
 			&GTM_SELECT="GTM_NO"
 		)
-		&CURRNENT_PATH_USE=TRUE()
+		&CURRENT_PATH_USE=TRUE()
 		IF DIALOG.BOOLEAN(SIMPLE_REPROGRAM)
 		(	
 			&MODE="SIMPLE"
@@ -409,8 +411,9 @@ ENVIRONMENT_SUB:
 )
 //-----------------------		CHANGE_SUB		-----------------------	
 CHANGE_SUB:
+(
 	DIALOG.END
-	&CURRNENT_PATH_USE=FALSE()
+	&CURRENT_PATH_USE=FALSE()
 	DIALOG
 	(
 //-----------------------		PATH_SELECT		-----------------------	
@@ -421,21 +424,25 @@ CHANGE_SUB:
 		PATH_CHECK.1: CHOOSEBOX "PATH_1"
 		(
 			&PATH_SELECTED_NUM="PATH_CHECK.1"
+			&PATH_SELECTED_NUM_2="PATH_1"
 			PRINT "&PATH_SELECTED_NUM selected"
 		)
 		PATH_CHECK.2: CHOOSEBOX "PATH_2"
 		(
 			&PATH_SELECTED_NUM="PATH_CHECK.2"
+			&PATH_SELECTED_NUM_2="PATH_2"
 			PRINT "&PATH_SELECTED_NUM selected"
 		)
 		PATH_CHECK.3: CHOOSEBOX "PATH_3"
 		(
 			&PATH_SELECTED_NUM="PATH_CHECK.3"
+			&PATH_SELECTED_NUM_2="PATH_3"
 			PRINT "&PATH_SELECTED_NUM selected"
 		)
 		PATH_CHECK.4: CHOOSEBOX "PATH_4"
 		(
 			&PATH_SELECTED_NUM="PATH_CHECK.4"
+			&PATH_SELECTED_NUM_2="PATH_4"
 			PRINT "&PATH_SELECTED_NUM selected"
 		)
 		POS 1. 5. 6. 
@@ -507,7 +514,19 @@ CHANGE_SUB:
 			DIALOG.SetFile PATH_4  &PATH_FOLDER4\*.elf
 			DIALOG.SET PATH_CHECK.4
 		)
-
+		POS 45. 5. 11.
+		BUTTON "[:edit]COPY_PATH "
+		(						
+			IF &VERI_FAVORITE==TRUE()
+			(
+				GOSUB FAVORITE_PATH_COPY_SUB
+			)
+			ELSE
+			(
+				DIALOG.MESSAGE "There is no Favorite information"
+			)
+			
+		)
 //-----------------------		SCRIPT_SELECT		-----------------------
 		POS 1. 6. 15.
 		LINE "WINDOW_SCRIPT_SELECT"
@@ -554,12 +573,12 @@ CHANGE_SUB:
 		POS 10. 14. 10. 1.
 		BUTTON "[:edit]SET_1"
 		(
-			GOSUB FAVORITE_SUB "SET_1" "SAVE"
+			GOSUB FAVORITE_SAVE_LOAD_SUB "SET_1" "SAVE"
 		)
 		POS 26. 14. 10.
 		BUTTON "[:edit]SET_2"
 		(	
-			GOSUB FAVORITE_SUB "SET_2" "SAVE"
+			GOSUB FAVORITE_SAVE_LOAD_SUB "SET_2" "SAVE"
 		)
 //-----------------------		CPU_SELECT		-----------------------
 		POS 45. 10. 11.
@@ -584,8 +603,9 @@ CHANGE_SUB:
 					WRITE #1 "&PATH2"
 					WRITE #1 "&PATH3"
 					WRITE #1 "&PATH4"
-					WRITE #1 "&PATH5"
+					;WRITE #1 "&PATH5"
 					WRITE #1 "PATH_CHECK.1"
+					WRITE #1 "&PATH_SELECTED_NUM_2"
 					CLOSE #1
 				)
 				ELSE IF DIALOG.BOOLEAN(PATH_CHECK.2)
@@ -597,8 +617,9 @@ CHANGE_SUB:
 					WRITE #1 "&PATH_CHANGE2"
 					WRITE #1 "&PATH3"
 					WRITE #1 "&PATH4"
-					WRITE #1 "&PATH5"
-					WRITE #1 "PATH_CHECK.2"					
+					;WRITE #1 "&PATH5"
+					WRITE #1 "PATH_CHECK.2"
+					WRITE #1 "&PATH_SELECTED_NUM_2"					
 					CLOSE #1
 				)
 				ELSE IF DIALOG.BOOLEAN(PATH_CHECK.3)
@@ -610,8 +631,9 @@ CHANGE_SUB:
 					WRITE #1 "&PATH2"
 					WRITE #1 "&PATH_CHANGE3"
 					WRITE #1 "&PATH4"
-					WRITE #1 "&PATH5"
+					;WRITE #1 "&PATH5"
 					WRITE #1 "PATH_CHECK.3"
+					WRITE #1 "&PATH_SELECTED_NUM_2"
 					CLOSE #1
 				)
 				ELSE IF DIALOG.BOOLEAN(PATH_CHECK.4)
@@ -623,21 +645,9 @@ CHANGE_SUB:
 					WRITE #1 "&PATH2"
 					WRITE #1 "&PATH3"
 					WRITE #1 "&PATH_CHANGE4"
-					WRITE #1 "&PATH5"
+					;WRITE #1 "&PATH5"
 					WRITE #1 "PATH_CHECK.4"
-					CLOSE #1
-				)
-				ELSE IF DIALOG.BOOLEAN(PATH_CHECK.5)
-				(
-					&PATH_SELECTED="&PATH_CHANGE5"
-					OPEN #1 ~~\Button\Env\ELF_PATH.txt /CREATE
-					WRITE #1 "&PATH_SELECTED"
-					WRITE #1 "&PATH1"
-					WRITE #1 "&PATH2"
-					WRITE #1 "&PATH3"
-					WRITE #1 "&PATH4"
-					WRITE #1 "&PATH_CHANGE5"
-					WRITE #1 "PATH_CHECK.5"
+					WRITE #1 "&PATH_SELECTED_NUM_2"
 					CLOSE #1
 				)					
 			)
@@ -699,7 +709,7 @@ CHANGE_SUB:
 	
 	IF &VERI_FAVORITE==TRUE()
 	(
-	DIALOG.SetFile PATH_5  "&PATH4"
+	DIALOG.SetFile PATH_5  "&PATH_SELECTED_FAVORITE"
 	)
 	ELSE
 	(
@@ -712,6 +722,7 @@ CHANGE_SUB:
 	DIALOG.SET SCRIPT_CHECK.0
 	DIALOG.SET &CONNECT_TYPE_LAST
 	STOP
+)
 ENDDO	
 	
 REPROGRAM_SUB:
@@ -757,7 +768,7 @@ REPROGRAM_SUB:
 	)
 	PRINT "&PATH_SELECTED flash complete./&CPU_TYPE"
 
-	IF &CURRNENT_PATH_USE==TRUE()
+	IF &CURRENT_PATH_USE==TRUE()
 	(
 		GOSUB END_PROCESS2_SUB
 	)
@@ -854,7 +865,7 @@ END_PROCESS2_SUB:
 	(
 		SYSTEM.UP
 	)
-	IF &VERI_FAVORITE==TRUE()
+	IF (&VERI_FAVORITE==TRUE())&&(&CURRENT_PATH_USE==TRUE())
 	(
 		OPEN #1 ~~\Button\Env\CPU_TYPE.txt /CREATE
 		WRITE #1 "&CPU_TYPE_FAVORITE"
@@ -870,19 +881,22 @@ END_PROCESS2_SUB:
 		WRITE #1 "&PATH2"
 		WRITE #1 "&PATH3"
 		WRITE #1 "&PATH4"
-		WRITE #1 "&PATH5"
-		WRITE #1 "&PATH_SELECTED_NUM_FAVORITE"					
+		;WRITE #1 "&PATH5"
+		WRITE #1 "&PATH_SELECTED_NUM_FAVORITE"
+		WRITE #1 "&PATH_SELECTED_NUM_2"		
 		CLOSE #1
 	)
 )
 ENDDO
+//-----------------------		END OF END_PROCESS2_SUB		---------------------------
 
-//-----------------------		CLOSE_END_SUB		---------------------------
+//-----------------------		CLOSE_END_SUB		-----------------------------------
 CLOSE_END_SUB:
 DIALOG.END
 ENDDO
+//-----------------------		END OF CLOSE_END_SUB		---------------------------
 
-//-----------------------		COMMUNICATION_SUB		---------------------------
+//-----------------------		COMMUNICATION_SUB		-------------------------------
 setup_intercom:
 (
   &portTC0=FORMAT.DECIMAL(1.,INTERCOM.PORT())
@@ -905,8 +919,10 @@ coreTC0:
   &params ; execute on this GUI
   RETURN
 )
-//-----------------------		FAVORITE_SUB		---------------------------
-FAVORITE_SUB:
+//-----------------------		END OF COMMUNICATION_SUB		-----------------------
+
+//-----------------------		FAVORITE_SAVE_LOAD_SUB		---------------------------
+FAVORITE_SAVE_LOAD_SUB:
 (
 	LOCAL &SETTING_VALUE &SAVE_LOAD_FAVORITE
 	ENTRY &SETTING_VALUE &SAVE_LOAD_FAVORITE
@@ -934,11 +950,11 @@ FAVORITE_SUB:
 			&PATH_SELECTED_NUM_FAVORITE="PATH_CHECK.4"
 			&PATH_SELECTED_FAVORITE=DIALOG.STRing(PATH_4)
 		)
-		ELSE IF DIALOG.BOOLEAN(PATH_CHECK.5)
-		(
-			&PATH_SELECTED_NUM_FAVORITE="PATH_CHECK.5"	
-			&PATH_SELECTED_FAVORITE=DIALOG.STRing(PATH_5)
-		)
+;		ELSE IF DIALOG.BOOLEAN(PATH_CHECK.5)
+;		(
+;			&PATH_SELECTED_NUM_FAVORITE="PATH_CHECK.5"	
+;			&PATH_SELECTED_FAVORITE=DIALOG.STRing(PATH_5)
+;		)
 
 		IF DIALOG.BOOLEAN(Option_Connect.1)
 		(
@@ -957,8 +973,9 @@ FAVORITE_SUB:
 		DO C:\T32\Button\Favorit.cmm &SETTING_VALUE &SAVE_LOAD_FAVORITE
 		ENTRY &VERI_FAVORITE &CPU_TYPE_FAVORITE &CONNECT_TYPE_FAVORITE &PATH_SELECTED_FAVORITE &PATH_SELECTED_NUM_FAVORITE
 		IF &VERI_FAVORITE==TRUE()
-		(		
+		(	
 			&CPU_TYPE="&CPU_TYPE_FAVORITE"
+			SYSTEM.CPU &CPU_TYPE
 			&CONNECT_TYPE="&CONNECT_TYPE_FAVORITE"
 			&PATH_SELECTED="&PATH_SELECTED_FAVORITE"
 			;&PATH_SELECTED_NUM="PATH_CHECK.5"
@@ -969,5 +986,37 @@ FAVORITE_SUB:
 			PRINT "PROBLEM"
 		)
 	)
+	Return
 )
-//---------------------------------------------------------------------------	
+//-----------------------		END OF FAVORITE_SAVE_LOAD_SUB		-------------------
+
+//-----------------------		FAVORITE_PATH_COPY_SUB		---------------------------
+FAVORITE_PATH_COPY_SUB:
+(
+	IF "&PATH_SELECTED_NUM"=="PATH_CHECK.1"
+	(
+		DIALOG.SetFile &PATH_SELECTED_NUM_2 "&PATH_SELECTED_FAVORITE"
+		&PATH_CHANGE1=DIALOG.STRing("&PATH_SELECTED_NUM_2")
+		PRINT "&PATH_CHANGE1"
+	)
+	ELSE IF "&PATH_SELECTED_NUM"=="PATH_CHECK.2"
+	(
+		DIALOG.SetFile &PATH_SELECTED_NUM_2 "&PATH_SELECTED_FAVORITE"
+		&PATH_CHANGE2=DIALOG.STRing("&PATH_SELECTED_NUM_2")
+		PRINT "&PATH_CHANGE2"
+	)
+	ELSE IF "&PATH_SELECTED_NUM"=="PATH_CHECK.3"
+	(
+		DIALOG.SetFile &PATH_SELECTED_NUM_2 "&PATH_SELECTED_FAVORITE"
+		&PATH_CHANGE3=DIALOG.STRing("&PATH_SELECTED_NUM_2")
+		PRINT "&PATH_CHANGE3"
+	)
+	ELSE IF "&PATH_SELECTED_NUM"=="PATH_CHECK.4"
+	(
+		DIALOG.SetFile &PATH_SELECTED_NUM_2 "&PATH_SELECTED_FAVORITE"
+		&PATH_CHANGE4=DIALOG.STRing("&PATH_SELECTED_NUM_2")
+		PRINT "&PATH_CHANGE4"
+	)
+	RETURN
+)
+//-------------------------------------------------------------------------------------	
