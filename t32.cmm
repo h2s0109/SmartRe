@@ -36,12 +36,13 @@
         TOOLITEM  "List Breakpoints" ":break"    "Break.List"
         TOOLITEM  "List Symbols"     ":symbols"  "sYmbol.Browse"
         TOOLITEM  "System Settings"  ":config"   "SYStem.state"
-	SEPARATOR
-	TOOLITEM  "ReProgram"  	     "RP"	 "Do C:\T32\Button\restart.cmm"
-	TOOLITEM  "Reset&GO"	     "RS"	 "Do C:\T32\Button\Reset.cmm"
-	//TOOLITEM  "GTM"  	     "GTM"	 "per.view ~~/pertc27x_GTM.PER /SpotLight" 
-//TOOLITEM  "GTM_config"	     "GC"	 "pedit GTM_config.cmm" 
-      //TOOLITEM  "Restart"  	     "[=59mfYDxskV0AWxwY0W48h015JaVz1]"	"pedit GTM_config.cmm"
+		SEPARATOR
+		TOOLITEM  "ReProgram"  	     "RP"	 "Do C:\T32\Button\restart.cmm"
+		TOOLITEM  "Reset&GO"	     "RG"	 "Do C:\T32\Button\Reset.cmm"
+		TOOLITEM  "Reset"	  		 "RS"	 "Do C:\T32\Button\Reset_hot.cmm"
+		SEPARATOR
+		TOOLITEM  "GTM_config"	 	 "GM"	 "Do C:\T32\Button\GTM2.cmm"
+		//TOOLITEM  "Restart"  	     "[=59mfYDxskV0AWxwY0W48h015JaVz1]"	"pedit GTM_config.cmm"
         
      )
   )
