@@ -1,20 +1,20 @@
 ; --------------------------------------------------------------------------------
-; @Title: Generic Flash script file for TC23x devices
+; @Title: Generic Flash script file for TC21x devices
 ; @Description:
 ;   Example script for flash declaration and programming of Infineon
-;   TriCore TC23x internal flash.
+;   TriCore TC21x internal flash.
 ; @Keywords: AURIX, Flash, Infineon, TriCore
-; @Author: MOB, WRD
-; @Chip: TC23*
+; @Author: MAX, MOB, WRD
+; @Chip: TC21*
 ; @Copyright: (C) 1989-2014 Lauterbach GmbH, licensed for use with TRACE32(R) only
 ; --------------------------------------------------------------------------------
-; $Rev: 2935 $
-; $Id: tc23x.cmm 2935 2014-08-05 07:49:32Z mobermeir $
+; $Rev: 3179 $
+; $Id: tc21x.cmm 3179 2015-02-24 09:59:27Z mobermaier $
 
 
 ; Script arguments:
 ;
-;   DO tc23x [PREPAREONLY] [CHECKBMHD] [CPU=<cpu>] [DUALPORT=0|1]
+;   DO tc21x [PREPAREONLY] [CHECKBMHD] [CPU=<cpu>] [DUALPORT=0|1]
 ;
 ;     PREPAREONLY only declares flash but does not execute flash programming
 ;
@@ -31,21 +31,21 @@
 ;
 ; Example:
 ;
-;   DO ~~/demo/tricore/flash/tc23x CPU=TC234LP DUALPORT=1 PREPAREONLY
+;   DO ~~/demo/tricore/flash/tc21x CPU=TC212L DUALPORT=1 PREPAREONLY
 ;
-; Supported devices: All TC23x devices, e.g. TC234LP, TC233LF.
+; Supported devices: All TC21x devices, e.g. TC212L, TC213L.
 ;
 ; Flash:
 ;
-;   2 MByte on-chip program flash      at 0x80000000--0x801FFFFF (cached)
-;                                      or 0xA0000000--0xA01FFFFF (non cached)
-;   128 kByte data flash EEPROM        at 0xAF000000--0xAF017FFF
+;  512 KByte on-chip program flash     at 0x80000000--0x8007FFFF (cached)
+;                                      or 0xA0000000--0xA007FFFF (non cached)
+;   64 kByte data flash EEPROM         at 0xAF000000--0xAF00FFFF
 ;   16 kByte data flash UCB sectors    at 0xAF100000--0xAF103FFF
 ;
 ; RAM:
 ;
-;   184 kByte Data Scratch-Pad RAM (DSPR) at      0xD0000000--0xD002DFFF
-;   8 kByte Instruction Scratch-Pad RAM (PSPR) at 0xC0000000--0xC0001FFF
+;   48 kByte Data Scratch-Pad RAM (DSPR) at        0xD0000000--0xD000BFFF
+;    8 kByte Instruction Scratch-Pad RAM (PSPR) at 0xC0000000--0xC0001FFF
 ;
 ; HINTS:
 ;
@@ -75,14 +75,14 @@
 ;     BMHD3 0xA001FFE0--0xA001FFFF
 ;   See the Infineon documentation for more information.
 ;
-;   Do not enable HSM boot when no valid HSM code is present. This will lock
-;   your device permanently. See the Infineon documentation and contact your
-;   Infineon FAE for more information on HSM.
+;   Although TC21x does not provide HSM it is recommended not to program the
+;   UCB_HSM. Contact your Infineon FAE for more information.
 ;
 ;   Pay special attention when modifying the UCB. An invalid or erroneous
 ;   content will lock your device permanently. This also happens in case the
 ;   confirmation code is neither "unlocked" nor "confirmed". See the Infineon
 ;   documentation for more information.
+;   See ~~/demo/tricore/flash/tc2xx-ucb.cmm for programming the UCB.
   ENTRY &ELF
   LOCAL &parameters &param_prepareonly &param_checkbmhd &param_cpu &param_dualport
   ENTRY %LINE &parameters
@@ -99,10 +99,12 @@
 
   IF SYStem.MODE()<5.
   (
+   
+
     IF "&param_cpu"!=""
       SYStem.CPU &param_cpu
-    IF !CPUIS(TC23*)
-      SYStem.CPU TC23*
+    IF !CPUIS(TC21*)
+      SYStem.CPU TC21*
 
     IF CHIP.EmulationDevice()
     (
@@ -134,33 +136,29 @@
     ENDDO BMHD_MISSING
   )
 
-  ; Disable Watchdog Timers on TC23xD[E]
+  ; Disable Watchdog Timers on TC21xL
 
   ; Disable the Safety Watchdog Timer (overall system level watchdog):
   PER.Set.simple D:0xF00360F4 %Long 0x00000008 // SCU_WDTSCON1, Request to disable the WDT
-  ; Disable the CPU Watchdog Timers:
+  ; Disable the CPU Watchdog Timer:
   PER.Set.simple D:0xF0036104 %Long 0x00000008 // SCU_WDTCPU0CON1, Request to disable the WDT
 
   ; ------------------------------------------------------------------------------
-  ; Flash declaration
+  ; Flash Declaration
 
   FLASH.RESet
 
   ; Program flash PF0
   FLASH.Create 1. 0xA0000000--0xA000BFFF  0x4000 TARGET Long /BootModeHeaDer 0xA0000000--0xA000001F  ; PS0, S0..S2
   FLASH.Create 1. 0xA000C000--0xA0013FFF  0x4000 TARGET Long /BootModeHeaDer 0xA000FFE0--0xA000FFFF  ; PS0, S3..S4
-  FLASH.Create 1. 0xA0014000--0xA0017FFF  0x4000 TARGET    Long /INFO "Tuning Protection"               ; PS0, S5
-  FLASH.Create 1. 0xA0018000--0xA001BFFF  0x4000 TARGET    Long /INFO "HSM code sector"                 ; PS0, S6
+  FLASH.Create 1. 0xA0014000--0xA0017FFF  0x4000 NOP    Long /INFO "Tuning Protection"               ; PS0, S5
+  FLASH.Create 1. 0xA0018000--0xA001BFFF  0x4000 TARGET Long                                         ; PS0, S6
   FLASH.Create 1. 0xA001C000--0xA001FFFF  0x4000 TARGET Long /BootModeHeaDer 0xA001FFE0--0xA001FFFF  ; PS0, S7
   FLASH.Create 1. 0xA0020000--0xA005FFFF  0x8000 TARGET Long /BootModeHeaDer 0xA0020000--0xA002001F  ; PS0, S8..S15
-  FLASH.Create 1. 0xA0060000--0xA007FFFF 0x10000 TARGET    Long /INFO "HSM code sector"                 ; PS0, S16..S17
-  FLASH.Create 2. 0xA0080000--0xA009FFFF 0x10000 TARGET Long   ; PS1, S18..S19
-  FLASH.Create 2. 0xA00A0000--0xA00FFFFF 0x20000 TARGET Long   ; PS1, S20..S22
-  FLASH.Create 3. 0xA0100000--0xA017FFFF 0x40000 TARGET Long   ; PS2, S23..S24
-  FLASH.Create 4. 0xA0180000--0xA01FFFFF 0x40000 TARGET Long   ; PS3, S25..S26
+  FLASH.Create 1. 0xA0060000--0xA007FFFF 0x10000 TARGET Long                                         ; PS0, S16..S17
 
   ; Data flash DF0
-  FLASH.Create 5. 0xAF000000--0xAF01FFFF  0x2000 TARGET Long /INFO "EEPROM"          ; DF0, EEPROM0..EEPROM15
+  FLASH.Create 5. 0xAF000000--0xAF00FFFF  0x2000 TARGET Long /INFO "EEPROM"          ; DF0, EEPROM0..EEPROM7
   FLASH.Create 6. 0xAF100000--0xAF1003FF   0x400 NOP    Long /INFO "UCB_PFlash"      ; DF0, UCB0
   FLASH.Create 6. 0xAF100400--0xAF1007FF   0x400 NOP    Long /INFO "UCB_DFlash"      ; DF0, UCB1
   FLASH.Create 6. 0xAF100800--0xAF100BFF   0x400 NOP    Long /INFO "UCB_HSMCOTP"     ; DF0, UCB2
@@ -239,19 +237,19 @@
 CheckAllBootModeHeaders:
 (
   LOCAL &bmhdValid
-  GOSUB CheckBootModeHeader 0xa0000000
+  GOSUB CheckBootModeHeader 0xA0000000
   ENTRY &bmhdValid
   IF &bmhdValid
     RETURN &bmhdValid
-  GOSUB CheckBootModeHeader 0xa0020000
+  GOSUB CheckBootModeHeader 0xA0020000
   ENTRY &bmhdValid
   IF &bmhdValid
     RETURN &bmhdValid
-  GOSUB CheckBootModeHeader 0xa000ffe0
+  GOSUB CheckBootModeHeader 0xA000FFE0
   ENTRY &bmhdValid
   IF &bmhdValid
     RETURN &bmhdValid
-  GOSUB CheckBootModeHeader 0xa001ffe0
+  GOSUB CheckBootModeHeader 0xA001FFE0
   ENTRY &bmhdValid
   RETURN &bmhdValid
 )

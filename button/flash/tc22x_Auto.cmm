@@ -151,7 +151,7 @@
   ; Program flash PF0
   FLASH.Create 1. 0xA0000000--0xA000BFFF  0x4000 TARGET Long /BootModeHeaDer 0xA0000000--0xA000001F  ; PS0, S0..S2
   FLASH.Create 1. 0xA000C000--0xA0013FFF  0x4000 TARGET Long /BootModeHeaDer 0xA000FFE0--0xA000FFFF  ; PS0, S3..S4
-  FLASH.Create 1. 0xA0014000--0xA0017FFF  0x4000 NOP    Long /INFO "Tuning Protection"               ; PS0, S5
+  FLASH.Create 1. 0xA0014000--0xA0017FFF  0x4000 TARGET Long /INFO "Tuning Protection"               ; PS0, S5
   FLASH.Create 1. 0xA0018000--0xA001BFFF  0x4000 TARGET Long                                         ; PS0, S6
   FLASH.Create 1. 0xA001C000--0xA001FFFF  0x4000 TARGET Long /BootModeHeaDer 0xA001FFE0--0xA001FFFF  ; PS0, S7
   FLASH.Create 1. 0xA0020000--0xA005FFFF  0x8000 TARGET Long /BootModeHeaDer 0xA0020000--0xA002001F  ; PS0, S8..S15

@@ -14,17 +14,18 @@ LOCAL &SCRIPT_FOLDER2
 LOCAL &SCRIPT_FOLDER3
 LOCAL &SCRIPT_FOLDER4
 
-IF (!os.file(~~\Button\Env\SCRIPT_PATH_2.txt))
+IF (!os.file(~~\Button\Env\SCRIPT_PATH.txt))
 (
-	OPEN  #1 ~~\Button\Env\SCRIPT_PATH_2.txt /CREATE
-	WRITE #1 "C:"
-	WRITE #1 "C:"
-	WRITE #1 "C:"
-	WRITE #1 "C:"
-	WRITE #1 "C:"
+	OPEN  #1 ~~\Button\Env\SCRIPT_PATH.txt /CREATE
+	WRITE #1 "C:\"
+	WRITE #1 "C:\"
+	WRITE #1 "C:\"
+	WRITE #1 "C:\"
+	WRITE #1 "C:\"
+	WRITE #1 "C:\"
 	CLOSE #1
 )
-	OPEN  #1 ~~\Button\Env\SCRIPT_PATH_2.txt /READ
+	OPEN  #1 ~~\Button\Env\SCRIPT_PATH.txt /READ
 	READ  #1 %line &SCRIPT_SELECTED
 	READ  #1 %line &SCRIPT1
 	READ  #1 %line &SCRIPT2
@@ -35,19 +36,19 @@ IF (!os.file(~~\Button\Env\SCRIPT_PATH_2.txt))
 	
 	IF "&SCRIPT1"==""
 	(
-		&SCRIPT1="C:"
+		&SCRIPT1="C:\"
 	)
 	IF "&SCRIPT2"==""
 	(
-		&SCRIPT2="C:"
+		&SCRIPT2="C:\"
 	)
 	IF "&SCRIPT3"==""
 	(
-		&SCRIPT3="C:"
+		&SCRIPT3="C:\"
 	)
 	IF "&SCRIPT4"==""
 	(
-		&SCRIPT4="C:"
+		&SCRIPT4="C:\"
 	)
 	IF "&LAST_SEL_SCRIPT"==""
 	(
@@ -129,7 +130,7 @@ IF (!os.file(~~\Button\Env\SCRIPT_PATH_2.txt))
 				IF DIALOG.BOOLEAN(SCRIPT_CHECK.1)
 				(
 					&SCRIPT_SELECTED="&SCRIPT_CHANGE1"
-					OPEN #1 ~~\Button\Env\SCRIPT_PATH_2.txt /CREATE
+					OPEN #1 ~~\Button\Env\SCRIPT_PATH.txt /CREATE
 					WRITE #1 "&SCRIPT_SELECTED"
 					WRITE #1 "&SCRIPT_CHANGE1"
 					WRITE #1 "&SCRIPT2"
@@ -142,7 +143,7 @@ IF (!os.file(~~\Button\Env\SCRIPT_PATH_2.txt))
 				ELSE IF DIALOG.BOOLEAN(SCRIPT_CHECK.2)
 				(
 					&SCRIPT_SELECTED="&SCRIPT_CHANGE2"
-					OPEN #1 ~~\Button\Env\SCRIPT_PATH_2.txt /CREATE
+					OPEN #1 ~~\Button\Env\SCRIPT_PATH.txt /CREATE
 					WRITE #1 "&SCRIPT_SELECTED"
 					WRITE #1 "&SCRIPT1"
 					WRITE #1 "&SCRIPT_CHANGE2"
@@ -155,7 +156,7 @@ IF (!os.file(~~\Button\Env\SCRIPT_PATH_2.txt))
 				ELSE IF DIALOG.BOOLEAN(SCRIPT_CHECK.3)
 				(
 					&SCRIPT_SELECTED="&SCRIPT_CHANGE3"
-					OPEN #1 ~~\Button\Env\SCRIPT_PATH_2.txt /CREATE
+					OPEN #1 ~~\Button\Env\SCRIPT_PATH.txt /CREATE
 					WRITE #1 "&SCRIPT_SELECTED"
 					WRITE #1 "&SCRIPT1"
 					WRITE #1 "&SCRIPT2"
@@ -168,7 +169,7 @@ IF (!os.file(~~\Button\Env\SCRIPT_PATH_2.txt))
 				ELSE IF DIALOG.BOOLEAN(SCRIPT_CHECK.4)
 				(
 					&SCRIPT_SELECTED="&SCRIPT_CHANGE4"
-					OPEN #1 ~~\Button\Env\SCRIPT_PATH_2.txt /CREATE
+					OPEN #1 ~~\Button\Env\SCRIPT_PATH.txt /CREATE
 					WRITE #1 "&SCRIPT_SELECTED"
 					WRITE #1 "&SCRIPT1"
 					WRITE #1 "&SCRIPT2"
@@ -178,10 +179,6 @@ IF (!os.file(~~\Button\Env\SCRIPT_PATH_2.txt))
 					CLOSE #1
 					DIALOG.END
 				)				
-				DO &SCRIPT_SELECTED win
-			)
-			ELSE IF STRING.FIND("cmm","&SCRIPT_SELECTED")
-			(
 				DO &SCRIPT_SELECTED win
 			)
 			ELSE
@@ -195,9 +192,9 @@ IF (!os.file(~~\Button\Env\SCRIPT_PATH_2.txt))
 	)
 
 //-----------------------		DEFAULT_ACTION		-----------------------			
-	DIALOG.Set SCRIPT_1  "&SCRIPT1"
-	DIALOG.Set SCRIPT_2  "&SCRIPT2"
-	DIALOG.Set SCRIPT_3  "&SCRIPT3"
-	DIALOG.Set SCRIPT_4  "&SCRIPT4"		
+	DIALOG.SetFile SCRIPT_1  "&SCRIPT1"
+	DIALOG.SetFile SCRIPT_2  "&SCRIPT2"
+	DIALOG.SetFile SCRIPT_3  "&SCRIPT3"
+	DIALOG.SetFile SCRIPT_4  "&SCRIPT4"		
 	DIALOG.SET &LAST_SEL_SCRIPT
 	STOP

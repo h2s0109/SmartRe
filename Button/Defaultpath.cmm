@@ -1,0 +1,52 @@
+B::
+DIALOG
+(
+	HEADER "Default PATH"
+		POS 38. 0. 11.
+		BUTTON "[:edit]PATH_FIND"
+		(
+			
+			DIALOG.SetDIR PATH_1 c:\*
+		)
+		POS 38. 1. 11.
+		BUTTON "[:edit]PATH_SAVE "
+		(
+			
+		)
+		POS 38. 2. 11.
+		BUTTON "[:edit]PATH_APPLY "
+		(
+
+		)
+		POS 38. 3. 11.
+		BUTTON "[:edit]PATH_CANCLE "
+		(
+
+		)
+		POS 1. 0. 35.
+		PATH_1:   EDIT "C:\"
+		(
+			&PATH1=DIALOG.STRing(PATH_1)
+		)
+	
+	POS 1. 1. 35. 1.
+	DEFAULT_CONFIG: PULLDOWN "DEFAULT_1,DEFAULT_2,DEFAULT_3"
+	(
+		IF DIALOG.STRing(DEFAULT_CONFIG)=="DEFAULT_1"			
+		(
+			DIALOG.Set Dyna_Path "DEFAULT_1"	;"CPU: &CPU_TYPE_PREVIOUS"
+		)
+		IF DIALOG.STRing(DEFAULT_CONFIG)=="DEFAULT_2"			
+		(
+			DIALOG.Set Dyna_Path "DEFAULT_2"
+		)
+		IF DIALOG.STRing(DEFAULT_CONFIG)=="DEFAULT_3"
+		(
+			DIALOG.Set Dyna_Path "DEFAULT_3"
+		)
+	)
+	POS 1. 2. 35. 5.
+	BOX "Default PATH"
+	POS 2. 3. 33. 1.
+	Dyna_Path: DYNTEXT "DEFAULT_1"
+)

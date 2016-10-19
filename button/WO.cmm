@@ -1,13 +1,13 @@
 LOCAL &SCRIPT_SELECTED
 IF (!os.file(~~\Button\Env\SCRIPT_PATH.txt))
 (
-	OPEN  #1 ~~\Button\Env\SCRIPT_PATH.txt /CREATE
+	OPEN  #1 ~~\Button\Env\SCRIPT_PATH_2.txt /CREATE
 	WRITE #1 "C:\"
 	WRITE #1 "C:\"
 	WRITE #1 "C:\"
 	CLOSE #1
 )
-	OPEN  #1 ~~\Button\Env\SCRIPT_PATH.txt /READ
+	OPEN  #1 ~~\Button\Env\SCRIPT_PATH_2.txt /READ
 	READ  #1 %line &SCRIPT_SELECTED
 	CLOSE #1
 	store &SCRIPT_SELECTED win
