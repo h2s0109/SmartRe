@@ -83,10 +83,10 @@
 ;   content will lock your device permanently. This also happens in case the
 ;   confirmation code is neither "unlocked" nor "confirmed". See the Infineon
 ;   documentation for more information.
-;
-  ENTRY &ELF
+;   See ~~/demo/tricore/flash/tc2xx-ucb.cmm for programming the UCB.
+
   LOCAL &parameters &param_prepareonly &param_checkbmhd &param_cpu &param_dualport
-  ENTRY %LINE &parameters
+  ENTRY &parameters &parameters2 &useboot
 
   &param_prepareonly=(STRing.SCAN(STRing.UPpeR("&parameters"),"PREPAREONLY",0)!=-1)
   &param_checkbmhd=(STRing.SCAN(STRing.UPpeR("&parameters"),"CHECKBMHD",0)!=-1)
@@ -201,9 +201,15 @@
   ;(
     ; Enable flash programming
     FLASH.ReProgram.ALL
-
-    Data.LOAD.auto &ELF
-
+  IF &useboot==TRUE()
+  (
+    Data.LOAD.auto &parameters /noclear
+    Data.LOAD.auto &parameters2
+  )
+  ELSE
+  (
+    Data.LOAD.auto &parameters
+  )
     ; Use the following commands to manually program a valid default BMHD (see comment above)
     ; Data.Set 0xA0000000++0x17 %Long 0xA0000020 0xB3590070 0x00000000 0x00000000 0x00000000 0x00000000
     ; Data.SUM 0xA0000000++0x17 /Long /ByteSWAP /CRC32

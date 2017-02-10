@@ -1,6 +1,5 @@
-
 b::
 Sys.d
 Sys.u
-//wait 1.s
-go
+R.S PC 0XA0000020
+GO

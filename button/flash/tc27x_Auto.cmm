@@ -86,17 +86,20 @@
 ;   documentation for more information.
 ;
 
- ENTRY &ELF
   LOCAL &parameters &param_prepareonly &param_checkbmhd &param_cpu &param_dualport
-  ENTRY %LINE &parameters
-
+  ENTRY &parameters &parameters2 &useboot
+  PRINT "&parameters"
+  PRINT "\n"
+  PRINT "&parameters2"
+  PRINT "\n"
+  PRINT "&useboot"
   &param_prepareonly=(STRing.SCAN(STRing.UPpeR("&parameters"),"PREPAREONLY",0)!=-1)
   &param_checkbmhd=(STRing.SCAN(STRing.UPpeR("&parameters"),"CHECKBMHD",0)!=-1)
   &param_cpu=STRing.SCANAndExtract(STRing.UPpeR("&parameters"),"CPU=","")
   &param_dualport=0
   IF VERSION.BUILD.BASE()>=48610.
     &param_dualport=STRing.SCANAndExtract(STRing.UPpeR("&parameters"),"DUALPORT=","0")
-
+  PRINT "\n"
   ; ------------------------------------------------------------------------------
   ; Initialize
 
@@ -226,10 +229,16 @@
   ;IF &progflash
  ; (
     ; Enable flash programming
-    FLASH.ReProgram.ALL
-
-    Data.LOAD.auto &ELF
-
+    FLASH.ReProgram.ALL 
+  IF &useboot==TRUE()
+  (
+    Data.LOAD.auto &parameters /noclear
+    Data.LOAD.auto &parameters2
+  )
+  ELSE
+  (
+    Data.LOAD.auto &parameters
+  )
     ; Use the following commands to manually program a valid default BMHD (see comment above)
     ; Data.Set 0xA0000000++0x17 %Long 0xA0000020 0xB3590070 0x00000000 0x00000000 0x00000000 0x00000000
     ; Data.SUM 0xA0000000++0x17 /Long /ByteSWAP /CRC32
