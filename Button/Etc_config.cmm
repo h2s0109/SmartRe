@@ -10,7 +10,7 @@ MAIN:
 (
 	DIALOG
 	(
-		POS 0. 0. 16. 5.
+		POS 0. 0. 16. 8.
 		BOX "CORE"
 		POS 1. 1. 10. 1.
 		CORE_CHEK.0: 	CHOOSEBOX "1 CORE" ""
@@ -30,6 +30,30 @@ MAIN:
 				PRINT "Current core is &CPU_TYPE, This option can not select."
 			)
 		)
+		CORE_CHEK.3: 	CHOOSEBOX "4 CORE"
+		(
+			IF ("&CPU_CHECK"=="TC22"||"&CPU_CHECK"=="TC23"||"&CPU_CHECK"=="TC26"||"&CPU_CHECK"=="TC27")
+			(
+				DIALOG.SET CORE_CHEK.0
+				PRINT "Current core is &CPU_TYPE, This option can not select."
+			)
+		)
+		CORE_CHEK.4: 	CHOOSEBOX "5 CORE"
+		(
+			IF ("&CPU_CHECK"=="TC22"||"&CPU_CHECK"=="TC23"||"&CPU_CHECK"=="TC26"||"&CPU_CHECK"=="TC27")
+			(
+				DIALOG.SET CORE_CHEK.0
+				PRINT "Current core is &CPU_TYPE, This option can not select."
+			)
+		)
+		CORE_CHEK.5: 	CHOOSEBOX "6 CORE"
+		(
+			IF ("&CPU_CHECK"=="TC22"||"&CPU_CHECK"=="TC23"||"&CPU_CHECK"=="TC26"||"&CPU_CHECK"=="TC27")
+			(
+				DIALOG.SET CORE_CHEK.0
+				PRINT "Current core is &CPU_TYPE, This option can not select."
+			)
+		)
 		POS 16. 0. 18. 5.
 		BOX "Boot"
 		POS 17. 1. 4. 1.
@@ -43,15 +67,15 @@ MAIN:
 			&Boot_PC_ADD=DIALOG.STRing(Boot_PC)
 		)
 		
-		POS 0. 4. 16. 6.
+		POS 0. 7. 16. 6.
 		BOX "ETC"
-		POS 1. 5. 14. 1.
+		POS 1. 8. 14. 1.
 		CORE_STATE: CHECKBOX "Core state" ""
-		POS 1. 6. 14. 1.
+		POS 1. 9. 14. 1.
 		MULTI_CORE_WINDOW: CHECKBOX "Multicore window" ""
-		POS 1. 7. 14. 1.
+		POS 1. 10. 14. 1.
 		SIMPLE_REPROGRAM: CHECKBOX "Simple reprogram" ""
-		POS 1. 8. 14. 1. 
+		POS 1. 11. 14. 1. 
 		RAMFLASH: CHECKBOX "Ramflash" ""	
 
 		POS 19. 7. 10. 1.
@@ -62,16 +86,16 @@ MAIN:
 			print "&DefaultFolderName"
 			&DEFAULT_TOUCH=TRUE()
 		)		
-		POS 0. 9. 34. 3.
+		POS 0. 12. 34. 3.
 		BOX "GTM"
-		POS 1. 10. 10. 1.
+		POS 1. 13. 10. 1.
 		GTM_DEBUG: CHECKBOX "GTM Debug" ""
-		POS 19. 10. 10. 1.
+		POS 19. 13. 10. 1.
 		BUTTON "[:edit]MCS "
 		(
 			DO ~~\Button\GTM_mcs.cmm 
 		)		
-		POS 1. 12. 10. 1.
+		POS 1. 15. 10. 1.
 		DEFBUTTON "APPLY" "JUMPTO CLOSEDIALOG2"
 		CLOSE "GOTO CLOSEDIALOG"
 	)
@@ -91,6 +115,18 @@ MAIN:
 			ELSE IF "&CORE_SELECTED_T"=="TRIPLE"
 			(
 				DIALOG.SET CORE_CHEK.2
+			)
+			ELSE IF "&CORE_SELECTED_T"=="QUAD"
+			(
+				DIALOG.SET CORE_CHEK.3
+			)
+			ELSE IF "&CORE_SELECTED_T"=="PENTA"
+			(
+				DIALOG.SET CORE_CHEK.4
+			)
+			ELSE IF "&CORE_SELECTED_T"=="HEXA"
+			(
+				DIALOG.SET CORE_CHEK.5
 			)
 		)
 		ELSE
@@ -171,6 +207,30 @@ CORE_CHECK_SUB:
 	ELSE IF DIALOG.BOOLEAN(CORE_CHEK.2)
 	(
 		&CORE_SELECTED_T="TRIPLE"
+		IF DIALOG.BOOLEAN(MULTI_CORE_WINDOW)
+		(	
+			&MULTI_CORE_WINDOW_T=TRUE()
+		)
+	)
+	ELSE IF DIALOG.BOOLEAN(CORE_CHEK.3)
+	(
+		&CORE_SELECTED_T="QUAD"
+		IF DIALOG.BOOLEAN(MULTI_CORE_WINDOW)
+		(	
+			&MULTI_CORE_WINDOW_T=TRUE()
+		)
+	)
+	ELSE IF DIALOG.BOOLEAN(CORE_CHEK.4)
+	(
+		&CORE_SELECTED_T="PENTA"
+		IF DIALOG.BOOLEAN(MULTI_CORE_WINDOW)
+		(	
+			&MULTI_CORE_WINDOW_T=TRUE()
+		)
+	)
+	ELSE IF DIALOG.BOOLEAN(CORE_CHEK.5)
+	(
+		&CORE_SELECTED_T="HEXA"
 		IF DIALOG.BOOLEAN(MULTI_CORE_WINDOW)
 		(	
 			&MULTI_CORE_WINDOW_T=TRUE()

@@ -58,7 +58,7 @@ ENTRY &CONNECT_TYPE_LAST_CHANGE &CPU_TYPE_TEMP_CHANGE &PATH_SELECTED_CHANGE1 &PA
 //-----------------------		PATH_SELECT		-----------------------	
 		POS 1. 0. 11.
 		LINE "PATH_SELECT"
-		HEADER "SMART Reprogram V10.0-HanSungsu"
+		HEADER "SMART Reprogram V12.0-HanSungsu"
 		POS 1. 1. 6.
 		PATH_CHECK.1: CHOOSEBOX "PATH_1"
 		(
@@ -453,11 +453,16 @@ REPROGRAM_SUB:
 	(
 		DO ~~\Button\flash\tc29x_Auto.cmm "&PATH_SELECTED_REPROGRAM" "&PATH_SELECTED_BOOT_REPROGRAM" &USEBOOT_REPROGRAM
 	)
+	ELSE IF "&CPU_TYPE_MID_REPROGRAM"=="TC39"
+	(
+		DO ~~\Button\flash\tc39x_Auto.cmm "&PATH_SELECTED_REPROGRAM" "&PATH_SELECTED_BOOT_REPROGRAM" &USEBOOT_REPROGRAM
+	)
 	PRINT "&PATH_SELECTED_REPROGRAM flash complete./&CPU_TYPE_REPROGRAM"
 	RETURN  &CPU_TYPE_MID_REPROGRAM &CPU_TYPE_REPROGRAM
 )
 ENDDO
 //-----------------------	END OF REPROGRAM_SUB		------------------------
+
 //-----------------------	REPROGRAM_BOOT_SUB		------------------------
 REPROGRAM_BOOT_SUB:
 (	
@@ -507,6 +512,10 @@ REPROGRAM_BOOT_SUB:
 	(
 		DO ~~\Button\flash\tc29x_Auto.cmm "&PATH_SELECTED_REPROGRAM" ;"&PATH_SELECTED_BOOT_REPROGRAM"PLACE HOLDER
 	)
+	ELSE IF "&CPU_TYPE_MID_REPROGRAM"=="TC39"
+	(
+		DO ~~\Button\flash\tc39x_Auto.cmm "&PATH_SELECTED_REPROGRAM" ;"&PATH_SELECTED_BOOT_REPROGRAM"PLACE HOLDER
+	)
 	PRINT "&PATH_SELECTED_REPROGRAM  &PATH_SELECTED_BOOT_REPROGRAM flash complete./&CPU_TYPE_REPROGRAM"
 	RETURN  &CPU_TYPE_MID_REPROGRAM &CPU_TYPE_REPROGRAM
 )
@@ -546,6 +555,7 @@ END_PROCESS1_SUB:
 //-----------------------		END_PROCESS2_SUB		---------------------------
 END_PROCESS2_SUB:
 (
+	LOCAL &GENERATION
 	LOCAL &CONNECT_PROCESS2 &CPU_TYPE_MID_PROCESS2 &CORE_SELECTED_PROCESS2 &MULTI_CORE_WINDOW_PROCESS2 &MODE_PROCESS2 &CORE_STATE_PROCESS2 &GTM_SELECT_PROCESS2 &MCS_CORE_PROCESS2 &MCS_CORE_CONFIG_PROCESS2 &MCS_CHANNEL_NUMBER_PROCESS2 &CPU_TYPE_PROCESS2 &RAMFLASH_PROCESS2
 	ENTRY &CONNECT_PROCESS2 &CPU_TYPE_MID_PROCESS2 &CORE_SELECTED_PROCESS2 &MULTI_CORE_WINDOW_PROCESS2 &MODE_PROCESS2 &CORE_STATE_PROCESS2 &GTM_SELECT_PROCESS2 &MCS_CORE_PROCESS2 &MCS_CORE_CONFIG_PROCESS2 &MCS_CHANNEL_NUMBER_PROCESS2 &CPU_TYPE_PROCESS2 &RAMFLASH_PROCESS2
 	IF &RAMFLASH_PROCESS2==TRUE()
@@ -566,50 +576,122 @@ END_PROCESS2_SUB:
 	(
 		SYSTEM.CONFIG.DEBUGPORTTYPE JTAG
 	)
-	IF ("&CPU_TYPE_MID_PROCESS2"!="TC21"&&"&CPU_TYPE_MID_PROCESS2"!="TC22"&&"&CPU_TYPE_MID_PROCESS2"!="TC23"&&"&CPU_TYPE_MID_PROCESS2"!="TC26")
+	&GENERATION = STRING.MID("&CPU_TYPE_MID_PROCESS2",0.,3.)
+	IF ("&GENERATION"=="TC2")
 	(
-		IF "&CORE_SELECTED_PROCESS2"=="SINGLE"
+		IF ("&CPU_TYPE_MID_PROCESS2"!="TC21"&&"&CPU_TYPE_MID_PROCESS2"!="TC22"&&"&CPU_TYPE_MID_PROCESS2"!="TC23"&&"&CPU_TYPE_MID_PROCESS2"!="TC26")
 		(
-			Core.assign  1.
-		)
-		ELSE IF "&CORE_SELECTED_PROCESS2"=="DOUBLE"
-		(
-			
-			Core.assign  1. 2.
-			IF &MULTI_CORE_WINDOW_PROCESS2==TRUE()
+			IF "&CORE_SELECTED_PROCESS2"=="SINGLE"
 			(
-				d.l /core 0
-				d.l /core 1
+				Core.assign  1.
 			)
-			
-		)
-		ELSE
-		(
-			Core.assign  1. 2. 3.
-			IF &MULTI_CORE_WINDOW_PROCESS2==TRUE()
+			ELSE IF "&CORE_SELECTED_PROCESS2"=="DOUBLE"
 			(
-				d.l /core 0
-				d.l /core 1
-				d.l /core 2
+				
+				Core.assign  1. 2.
+				IF &MULTI_CORE_WINDOW_PROCESS2==TRUE()
+				(
+					d.l /core 0
+					d.l /core 1
+				)
+				
+			)
+			ELSE
+			(
+				Core.assign  1. 2. 3.
+				IF &MULTI_CORE_WINDOW_PROCESS2==TRUE()
+				(
+					d.l /core 0
+					d.l /core 1
+					d.l /core 2
+				)
+			)
+		)
+		ELSE IF ("&CPU_TYPE_MID_PROCESS2"=="TC26")
+		(
+			IF "&CORE_SELECTED_PROCESS2"=="SINGLE"
+			(
+				Core.assign  1.
+			)
+			ELSE IF "&CORE_SELECTED_PROCESS2"=="DOUBLE"
+			(
+				
+				Core.assign  1. 2.
+				IF &MULTI_CORE_WINDOW_PROCESS2==TRUE()
+				(
+					d.l /core 0
+					d.l /core 1
+				)
 			)
 		)
 	)
-	ELSE IF ("&CPU_TYPE_MID_PROCESS2"=="TC26")
+	ELSE IF ("&GENERATION"=="TC3")
 	(
-		IF "&CORE_SELECTED_PROCESS2"=="SINGLE"
+		IF ("&CPU_TYPE_MID_PROCESS2"!="TC39x")
 		(
-			Core.assign  1.
-		)
-		ELSE IF "&CORE_SELECTED_PROCESS2"=="DOUBLE"
-		(
-			
-			Core.assign  1. 2.
-			IF &MULTI_CORE_WINDOW_PROCESS2==TRUE()
+			IF "&CORE_SELECTED_PROCESS2"=="SINGLE"
 			(
-				d.l /core 0
-				d.l /core 1
+				Core.assign  1.
+			)
+			ELSE IF "&CORE_SELECTED_PROCESS2"=="DOUBLE"
+			(
+				
+				Core.assign  1. 2.
+				IF &MULTI_CORE_WINDOW_PROCESS2==TRUE()
+				(
+					d.l /core 0
+					d.l /core 1
+				)
+				
+			)
+			ELSE IF "&CORE_SELECTED_PROCESS2"=="TRIPLE"
+			(
+				Core.assign  1. 2. 3.
+				IF &MULTI_CORE_WINDOW_PROCESS2==TRUE()
+				(
+					d.l /core 0
+					d.l /core 1
+					d.l /core 2
+				)
+			)
+			ELSE IF "&CORE_SELECTED_PROCESS2"=="QUAD"
+			(
+				Core.assign  1. 2. 3. 4.
+				IF &MULTI_CORE_WINDOW_PROCESS2==TRUE()
+				(
+					d.l /core 0
+					d.l /core 1
+					d.l /core 2
+					d.l /core 3
+				)
+			)
+			ELSE IF "&CORE_SELECTED_PROCESS2"=="PENTA"
+			(
+				Core.assign  1. 2. 3. 4. 5.
+				IF &MULTI_CORE_WINDOW_PROCESS2==TRUE()
+				(
+					d.l /core 0
+					d.l /core 1
+					d.l /core 2
+					d.l /core 3
+					d.l /core 4
+				)
+			)
+			ELSE IF "&CORE_SELECTED_PROCESS2"=="HEXA"
+			(
+				Core.assign  1. 2. 3. 4. 5. 6.
+				IF &MULTI_CORE_WINDOW_PROCESS2==TRUE()
+				(
+					d.l /core 0
+					d.l /core 1
+					d.l /core 2
+					d.l /core 3
+					d.l /core 4
+					d.l /core 5
+				)
 			)
 		)
+
 	)
 
 	IF "&MODE_T"=="COMPLEX"
@@ -855,6 +937,11 @@ PATH_HANDLE_SUB:
 	(
 		PRINT "hello29x"
 		&ELF_PATH_CORE="ELF_PATH_TC29x"
+	)
+	ELSE IF "&CPU_TYPE_PATH_HANDLE"=="TC39x"
+	(
+		PRINT "hello39x"
+		&ELF_PATH_CORE="ELF_PATH_TC39x"
 	)
 		
 	IF (!os.file(~~\Button\Env\Elf_path\&ELF_PATH_CORE.txt))

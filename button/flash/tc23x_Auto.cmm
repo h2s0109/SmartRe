@@ -197,8 +197,8 @@
     FLASH.ReProgram.ALL
   IF &useboot==TRUE()
   (
-    Data.LOAD.auto &parameters 
-    Data.LOAD.auto &parameters2 /noclear
+    Data.LOAD.auto &parameters /noclear
+    Data.LOAD.auto &parameters2
   )
   ELSE
   (

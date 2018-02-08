@@ -52,7 +52,7 @@ IF &USEBOOT_T==FALSE()
 		DIALOG.MESSAGE "Click the CHANGE button,please."\
 		"If you have a question, send a email to me."\
 		"       	       Steve.han@infineon.com"
-		SYSTEM.CPU TC2*
+		SYSTEM.CPU TC*
 		&CPU_TYPE_PREVIOUS=CPU()
 		&CONNECT_TYPE_PREVIOUS="JTAG"
 		&PATH_SELECTED_PREVIOUS="C:\"
@@ -105,7 +105,7 @@ ELSE
 		//Previous AND SYSTEM
 	IF (!os.file(~~\Button\Env\PREVIOUS_TYPE_BOOT.txt))
 	(
-		SYSTEM.CPU TC2*
+		SYSTEM.CPU TC*
 		&CPU_TYPE_PREVIOUS=CPU()
 		&CONNECT_TYPE_PREVIOUS="JTAG"
 		&PATH_SELECTED_PREVIOUS="C:\"
@@ -149,12 +149,12 @@ ELSE
 
 DIALOG
 (
-	HEADER "SMART Reprogram V11.0"
+	HEADER "SMART Reprogram V12.0"
 	
 	POS 0. 0. 33. 3.
 	BOX "MCU type select"
 	POS 1. 1. 31. 1.
-	MCU_TYPE: PULLDOWN "TC21x,TC22x,TC23x,TC26x,TC27x,TC29x"
+	MCU_TYPE: PULLDOWN "TC21x,TC22x,TC23x,TC26x,TC27x,TC29x,TC39x"
 	(
 		GOSUB CPU_TYPE_CHECK_SUB
 		ENTRY &CPU_TYPE_TEMP
@@ -255,7 +255,7 @@ DIALOG
 	(
 		LOCAL &USEBOOT_TEMP
 		&USEBOOT_TEMP=&USEBOOT_T
-		Do ~~\Button\Etc_config.cmm &CPU_TYPE &CORE_SELECTED_T &MULTI_CORE_WINDOW_T &CORE_STATE_T \
+		Do ~~\Button\Etc_config.cmm &CPU_TYPE_TEMP &CORE_SELECTED_T &MULTI_CORE_WINDOW_T &CORE_STATE_T \
 		&RAMFLASH_T &MCS_CORE &MCS_CHANNEL_NUMBER &MCS_CORE_CONFIG &GTM_SELECT_T &PC_T &PCADDRESS_T &USEBOOT_T &MODE_T &DefaultFolderName \
 		&Boot_PC_ADD_T
 		ENTRY &CPU_TYPE &CORE_SELECTED_T &MULTI_CORE_WINDOW_T &CORE_STATE_T &RAMFLASH_T \
@@ -495,6 +495,10 @@ REPROGRAM_SUB:
 	(
 		DO ~~\Button\flash\tc29x_Auto.cmm "&PATH_SELECTED_REPROGRAM" "&PATH_SELECTED_BOOT_REPROGRAM" &USEBOOT_REPROGRAM
 	)
+	ELSE IF "&CPU_TYPE_MID_REPROGRAM"=="TC39"
+	(
+		DO ~~\Button\flash\tc39x_Auto.cmm "&PATH_SELECTED_REPROGRAM" "&PATH_SELECTED_BOOT_REPROGRAM" &USEBOOT_REPROGRAM
+	)
 	PRINT "&PATH_SELECTED_REPROGRAM flash complete./&CPU_TYPE_REPROGRAM"
 	RETURN  &CPU_TYPE_MID_REPROGRAM &CPU_TYPE_REPROGRAM
 )
@@ -550,6 +554,10 @@ REPROGRAM_BOOT_SUB:
 	(
 		DO ~~\Button\flash\tc29x_Auto.cmm "&PATH_SELECTED_REPROGRAM" ;"&PATH_SELECTED_BOOT_REPROGRAM"PLACE HOLDER
 	)
+	ELSE IF "&CPU_TYPE_MID_REPROGRAM"=="TC39"
+	(
+		DO ~~\Button\flash\tc39x_Auto.cmm "&PATH_SELECTED_REPROGRAM" ;"&PATH_SELECTED_BOOT_REPROGRAM"PLACE HOLDER
+	)
 	PRINT "&PATH_SELECTED_REPROGRAM  &PATH_SELECTED_BOOT_REPROGRAM flash complete./&CPU_TYPE_REPROGRAM"
 	RETURN  &CPU_TYPE_MID_REPROGRAM &CPU_TYPE_REPROGRAM
 )
@@ -559,7 +567,7 @@ ENDDO
 //-----------------------		END_PROCESS2_SUB		---------------------------
 END_PROCESS2_SUB:
 (
-	LOCAL &CONNECT_PROCESS2 &CPU_TYPE_MID_PROCESS2 &CORE_SELECTED_PROCESS2 &MULTI_CORE_WINDOW_PROCESS2
+	LOCAL &CONNECT_PROCESS2 &CPU_TYPE_MID_PROCESS2 &CORE_SELECTED_PROCESS2 &MULTI_CORE_WINDOW_PROCESS2 &GENERATION
 	LOCAL  &MODE_PROCESS2 &CORE_STATE_PROCESS2 &GTM_SELECT_PROCESS2 &MCS_CORE_PROCESS2 &MCS_CORE_CONFIG_PROCESS2 &MCS_CHANNEL_NUMBER_PROCESS2 &CPU_TYPE_PROCESS2 &RAMFLASH_PROCESS2
 	ENTRY &CONNECT_PROCESS2 &CPU_TYPE_MID_PROCESS2 &CORE_SELECTED_PROCESS2 &MULTI_CORE_WINDOW_PROCESS2 \
 	&MODE_PROCESS2 &CORE_STATE_PROCESS2 &GTM_SELECT_PROCESS2 &MCS_CORE_PROCESS2 &MCS_CORE_CONFIG_PROCESS2 &MCS_CHANNEL_NUMBER_PROCESS2 &CPU_TYPE_PROCESS2 &RAMFLASH_PROCESS2
@@ -581,50 +589,123 @@ END_PROCESS2_SUB:
 	(
 		SYSTEM.CONFIG.DEBUGPORTTYPE JTAG
 	)
-	IF ("&CPU_TYPE_MID_PROCESS2"!="TC21"&&"&CPU_TYPE_MID_PROCESS2"!="TC22"&&"&CPU_TYPE_MID_PROCESS2"!="TC23"&&"&CPU_TYPE_MID_PROCESS2"!="TC26")
+	
+	&GENERATION = STRING.MID("&CPU_TYPE_MID_PROCESS2",0.,3.)
+	IF ("&GENERATION"=="TC2")
 	(
-		IF "&CORE_SELECTED_PROCESS2"=="SINGLE"
+		IF ("&CPU_TYPE_MID_PROCESS2"!="TC21"&&"&CPU_TYPE_MID_PROCESS2"!="TC22"&&"&CPU_TYPE_MID_PROCESS2"!="TC23"&&"&CPU_TYPE_MID_PROCESS2"!="TC26")
 		(
-			Core.assign  1.
-		)
-		ELSE IF "&CORE_SELECTED_PROCESS2"=="DOUBLE"
-		(
-			
-			Core.assign  1. 2.
-			IF &MULTI_CORE_WINDOW_PROCESS2==TRUE()
+			IF "&CORE_SELECTED_PROCESS2"=="SINGLE"
 			(
-				d.l /core 0
-				d.l /core 1
+				Core.assign  1.
 			)
-			
-		)
-		ELSE
-		(
-			Core.assign  1. 2. 3.
-			IF &MULTI_CORE_WINDOW_PROCESS2==TRUE()
+			ELSE IF "&CORE_SELECTED_PROCESS2"=="DOUBLE"
 			(
-				d.l /core 0
-				d.l /core 1
-				d.l /core 2
+				
+				Core.assign  1. 2.
+				IF &MULTI_CORE_WINDOW_PROCESS2==TRUE()
+				(
+					d.l /core 0
+					d.l /core 1
+				)
+				
+			)
+			ELSE
+			(
+				Core.assign  1. 2. 3.
+				IF &MULTI_CORE_WINDOW_PROCESS2==TRUE()
+				(
+					d.l /core 0
+					d.l /core 1
+					d.l /core 2
+				)
+			)
+		)
+		ELSE IF ("&CPU_TYPE_MID_PROCESS2"=="TC26")
+		(
+			IF "&CORE_SELECTED_PROCESS2"=="SINGLE"
+			(
+				Core.assign  1.
+			)
+			ELSE IF "&CORE_SELECTED_PROCESS2"=="DOUBLE"
+			(
+				
+				Core.assign  1. 2.
+				IF &MULTI_CORE_WINDOW_PROCESS2==TRUE()
+				(
+					d.l /core 0
+					d.l /core 1
+				)
 			)
 		)
 	)
-	ELSE IF ("&CPU_TYPE_MID_PROCESS2"=="TC26")
+	ELSE IF ("&GENERATION"=="TC3")
 	(
-		IF "&CORE_SELECTED_PROCESS2"=="SINGLE"
+		IF ("&CPU_TYPE_MID_PROCESS2"!="TC39x")
 		(
-			Core.assign  1.
-		)
-		ELSE IF "&CORE_SELECTED_PROCESS2"=="DOUBLE"
-		(
-			
-			Core.assign  1. 2.
-			IF &MULTI_CORE_WINDOW_PROCESS2==TRUE()
+			IF "&CORE_SELECTED_PROCESS2"=="SINGLE"
 			(
-				d.l /core 0
-				d.l /core 1
+				Core.assign  1.
+			)
+			ELSE IF "&CORE_SELECTED_PROCESS2"=="DOUBLE"
+			(
+				
+				Core.assign  1. 2.
+				IF &MULTI_CORE_WINDOW_PROCESS2==TRUE()
+				(
+					d.l /core 0
+					d.l /core 1
+				)
+				
+			)
+			ELSE IF "&CORE_SELECTED_PROCESS2"=="TRIPLE"
+			(
+				Core.assign  1. 2. 3.
+				IF &MULTI_CORE_WINDOW_PROCESS2==TRUE()
+				(
+					d.l /core 0
+					d.l /core 1
+					d.l /core 2
+				)
+			)
+			ELSE IF "&CORE_SELECTED_PROCESS2"=="QUAD"
+			(
+				Core.assign  1. 2. 3. 4.
+				IF &MULTI_CORE_WINDOW_PROCESS2==TRUE()
+				(
+					d.l /core 0
+					d.l /core 1
+					d.l /core 2
+					d.l /core 3
+				)
+			)
+			ELSE IF "&CORE_SELECTED_PROCESS2"=="PENTA"
+			(
+				Core.assign  1. 2. 3. 4. 5.
+				IF &MULTI_CORE_WINDOW_PROCESS2==TRUE()
+				(
+					d.l /core 0
+					d.l /core 1
+					d.l /core 2
+					d.l /core 3
+					d.l /core 4
+				)
+			)
+			ELSE IF "&CORE_SELECTED_PROCESS2"=="HEXA"
+			(
+				Core.assign  1. 2. 3. 4. 5. 6.
+				IF &MULTI_CORE_WINDOW_PROCESS2==TRUE()
+				(
+					d.l /core 0
+					d.l /core 1
+					d.l /core 2
+					d.l /core 3
+					d.l /core 4
+					d.l /core 5
+				)
 			)
 		)
+
 	)
 
 	IF "&MODE_T"=="COMPLEX"

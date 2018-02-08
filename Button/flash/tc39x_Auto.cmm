@@ -1,0 +1,341 @@
+; --------------------------------------------------------------------------------
+; @Title: Generic Flash script file for TC39x devices
+; @Description:
+;   Example script for flash declaration and programming of Infineon
+;   TriCore TC39x internal flash.
+; @Keywords: AURIX, Flash, Infineon, TriCore
+; @Author: MAX
+; @Chip: TC39*
+; @Copyright: (C) 1989-2016 Lauterbach GmbH, licensed for use with TRACE32(R) only
+; --------------------------------------------------------------------------------
+; $Id: tc39x.cmm 4734 2017-09-15 17:09:34Z mobermaier $
+
+
+; Script arguments:
+;
+;   DO tc39x [PREPAREONLY] [CPU=<cpu>]
+;
+;     PREPAREONLY only declares flash but does not execute flash programming
+;
+;     CPU=<cpu> selects CPU derivative <cpu>
+;
+;     DUALPORT default value is 0 (disabled). If DualPort mode is enabled
+;             flash algorithm stays running until flash programming is
+;             finished. Data is tranferred via dual port memory access.
+;
+; Example:
+;
+;   DO ~~/demo/tricore/flash/tc39x CPU=TC397X PREPAREONLY
+;
+; Supported devices: All TC39xX and TC39xXE devices, e.g. TC397X.
+;
+; Flash:
+;   3 MByte on-chip program flash 0    at 0x80000000--0x802FFFFF (cached)
+;                                      or 0xA0000000--0xA02FFFFF (non cached)
+;   3 MByte on-chip program flash 1    at 0x80300000--0x805FFFFF (cached)
+;                                      or 0xA0300000--0xA05FFFFF (non cached)
+;   3 MByte on-chip program flash 2    at 0x80600000--0x808FFFFF (cached)
+;                                      or 0xA0600000--0xA08FFFFF (non cached)
+;   3 MByte on-chip program flash 3    at 0x80900000--0x80BFFFFF (cached)
+;                                      or 0xA0900000--0xA0BFFFFF (non cached)
+;   3 MByte on-chip program flash 4    at 0x80C00000--0x80EFFFFF (cached)
+;                                      or 0xA0C00000--0xA0EFFFFF (non cached)
+;   1 MByte on-chip program flash 5    at 0x80F00000--0x80FFFFFF (cached)
+;                                      or 0xA0F00000--0xA0FFFFFF (non cached)
+;
+;   1 MByte on-chip data flash 0 EEPROM sectors  at 0xAF000000--0xAF0FFFFF
+;   24 KByte on-chip data flash 0 UCB sectors    at 0xAF400000--0xAF405FFF
+;   64 KByte on-chip data flash 0 CFS sectors    at 0xAF800000--0xAF80FFFF
+;   128 KByte on-chip data flash 1 HSM sectors   at 0xAFC00000--0xAFC1FFFF
+;
+; RAM:
+;    96 kByte Data Scratch-Pad RAM (DSPR) at        0xD0000000--0xD0017FFF
+;    64 kByte Instruction Scratch-Pad RAM (PSPR) at 0xC0000000--0xC000FFFF
+;
+; HINTS:
+;
+;   Erased flash is showing bus error caused by ECC error. ECC width is one
+;   page. In the PFlash a page is an aligned group of 32 bytes and in DFlash
+;   of 8 bytes.
+;
+;   The flash algorithm is programming PFlash in an aligned group of 32 bytes.
+;   When using FLASH.Program command the download has to care about this
+;   alignment.
+;
+;   To avoid any aligment issues FLASH.ReProgram is recommended. Unused flash
+;   data of affected sectors is programmed to 0x0.
+;
+;   FLASH.AUTO is not working for sectors with enabled ECC and uncorrectable
+;   ECC error (showing bus error).
+;
+; CAUTION:
+;
+;   Do not enable HSM boot when no valid HSM code is present. This will lock
+;   your device permanently. See the Infineon documentation and contact your
+;   Infineon FAE for more information on HSM.
+;   See ~~/demo/tricore/flash/tc39x-hsm.cmm for programming the HSM.
+;
+;   Pay special attention when modifying the UCB. An invalid or erroneous
+;   content will lock your device permanently. This also happens in case the
+;   confirmation code is neither "unlocked" nor "confirmed". See the Infineon
+;   documentation for more information.
+;   See ~~/demo/tricore/flash/tc3xx-ucb.cmm for programming the UCB.
+
+LOCAL &parameters &param_prepareonly &param_cpu &param_dualport
+ENTRY &parameters &parameters2 &useboot
+
+&param_prepareonly=(STRing.SCAN(STRing.UPpeR("&parameters"),"PREPAREONLY",0)!=-1)
+&param_cpu=STRing.SCANAndExtract(STRing.UPpeR("&parameters"),"CPU=","")
+&param_dualport=0
+IF VERSION.BUILD.BASE()>=48610.
+  &param_dualport=STRing.SCANAndExtract(STRing.UPpeR("&parameters"),"DUALPORT=","0")
+
+; --------------------------------------------------------------------------------
+; Initialize
+
+IF SYStem.MODE()<5.
+(
+
+  IF "&param_cpu"!=""
+    SYStem.CPU &param_cpu
+  IF !CPUIS(TC39*)
+    SYStem.CPU TC39*
+
+  CORE.select 0.        ; CPU0 is selected for flash programming.
+  SYStem.Up
+)
+
+; Disable Watchdog Timers on TC39x
+
+; Disable the Safety Watchdog Timer (overall system level watchdog):
+PER.Set.simple D:0xF00362AC %Long 0x00000008 // SCU_WDTSCON1, Request to disable the WDT
+; Disable the CPU Watchdog Timers:
+PER.Set.simple D:0xF0036250 %Long 0x00000008 // SCU_WDTCPU0CON1, Request to disable the WDT
+PER.Set.simple D:0xF003625C %Long 0x00000008 // SCU_WDTCPU1CON1, Request to disable the WDT
+PER.Set.simple D:0xF0036268 %Long 0x00000008 // SCU_WDTCPU2CON1, Request to disable the WDT
+PER.Set.simple D:0xF0036274 %Long 0x00000008 // SCU_WDTCPU3CON1, Request to disable the WDT
+PER.Set.simple D:0xF0036280 %Long 0x00000008 // SCU_WDTCPU4CON1, Request to disable the WDT
+PER.Set.simple D:0xF003628C %Long 0x00000008 // SCU_WDTCPU5CON1, Request to disable the WDT
+
+; --------------------------------------------------------------------------------
+; Flash Declaration
+
+FLASH.RESet
+
+; Program flash PF0
+FLASH.Create  1. 0xA0000000--0xA00FFFFF 0x4000 TARGET Long 0.  ; PS0, S0..S63
+FLASH.Create  2. 0xA0100000--0xA01FFFFF 0x4000 TARGET Long 0.  ; PS1, S64..S127
+FLASH.Create  3. 0xA0200000--0xA02FFFFF 0x4000 TARGET Long 0.  ; PS2, S128..S191
+; Program flash PF1
+FLASH.Create  4. 0xA0300000--0xA03FFFFF 0x4000 TARGET Long 1.  ; PS0, S0..S63
+FLASH.Create  5. 0xA0400000--0xA04FFFFF 0x4000 TARGET Long 1.  ; PS1, S64..S127
+FLASH.Create  6. 0xA0500000--0xA05FFFFF 0x4000 TARGET Long 1.  ; PS2, S128..S191
+; Program flash PF2
+FLASH.Create  7. 0xA0600000--0xA06FFFFF 0x4000 TARGET Long 2.  ; PS0, S0..S63
+FLASH.Create  8. 0xA0700000--0xA07FFFFF 0x4000 TARGET Long 2.  ; PS1, S64..S127
+FLASH.Create  9. 0xA0800000--0xA08FFFFF 0x4000 TARGET Long 2.  ; PS2, S128..S191
+; Program flash PF3
+FLASH.Create 10. 0xA0900000--0xA09FFFFF 0x4000 TARGET Long 3.  ; PS0, S0..S63
+FLASH.Create 11. 0xA0A00000--0xA0AFFFFF 0x4000 TARGET Long 3.  ; PS1, S64..S127
+FLASH.Create 12. 0xA0B00000--0xA0BFFFFF 0x4000 TARGET Long 3.  ; PS2, S128..S191
+; Program flash PF4
+FLASH.Create 13. 0xA0C00000--0xA0CFFFFF 0x4000 TARGET Long 4.  ; PS0, S0..S63
+FLASH.Create 14. 0xA0D00000--0xA0DFFFFF 0x4000 TARGET Long 4.  ; PS1, S64..S127
+FLASH.Create 15. 0xA0E00000--0xA0EFFFFF 0x4000 TARGET Long 4.  ; PS2, S128..S191
+; Program flash PF5
+FLASH.Create 16. 0xA0F00000--0xA0FFFFFF 0x4000 TARGET Long 5.  ; PS0, S0..S63
+
+; Data flash DF0
+FLASH.Create 17. 0xAF000000--0xAF0FFFFF 0x1000 TARGET Long /INFO "EEPROM"         ; DF0, DF0_EEPROM0..DF0_EEPROM255
+FLASH.Create 18. 0xAF400000--0xAF4007FF 0x0200 NOP    Long /INFO "UCB BMHD ORIG"  ; DF0, DF0_UCB0..DF0_UCB3
+FLASH.Create 18. 0xAF400800--0xAF400FFF 0x0200 NOP    Long /INFO "UCB misc"       ; DF0, DF0_UCB4..DF0_UCB7
+FLASH.Create 18. 0xAF401000--0xAF4017FF 0x0200 NOP    Long /INFO "UCB BMHD COPY"  ; DF0, DF0_UCB8..DF0_UCB11
+FLASH.Create 18. 0xAF401800--0xAF405FFF 0x0200 NOP    Long /INFO "UCB misc"       ; DF0, DF0_UCB12..DF0_UCB47
+FLASH.Create 19. 0xAF800000--0xAF80FFFF 0x0200 NOP    Long /INFO "CFS"            ; DF0, DF0_CFS0..DF0_CFS127
+; Data flash DF1
+FLASH.Create 20. 0xAFC00000--0xAFC1FFFF 0x1000 NOP    Long /INFO "HSM"  ; DF1, DF1_EEPROM (HSM)
+
+; Check for OTP sectors (special OTP handling required, see documentation)
+GOSUB CheckOTP "PFLASH0" "C:0xA0000000" "192."
+GOSUB CheckOTP "PFLASH1" "C:0xA0300000" "192."
+GOSUB CheckOTP "PFLASH2" "C:0xA0600000" "192."
+GOSUB CheckOTP "PFLASH3" "C:0xA0900000" "192."
+GOSUB CheckOTP "PFLASH4" "C:0xA0C00000" "192."
+GOSUB CheckOTP "PFLASH5" "C:0xA0F00000" "64."
+
+; Cached program flash address range
+FLASH.CreateALIAS 0x80000000--0x80FFFFFF 0xA0000000
+
+IF &param_dualport==0
+  FLASH.TARGET 0xC0000000 0xD0000000 0x4000 ~~/demo/tricore/flash/long/tc3.bin
+ELSE
+  FLASH.TARGET 0xC0000000 0xD0000000 0x4000 ~~/demo/tricore/flash/long/tc3.bin /DualPort
+
+; Initialize PSPR & DSPR ECC (if required)
+GOSUB InitSPR "0xC0000000" "0xD0000000" "0x10000"
+
+; Flash script ends here if called with parameter PREPAREONLY
+IF &param_prepareonly
+  ENDDO PREPAREDONE
+
+; --------------------------------------------------------------------------------
+; Example for download
+
+  ;DIALOG.YESNO "Program internal flash memory?"
+  ;LOCAL &progflash
+  ;ENTRY &progflash
+  ;IF &progflash
+  ;(
+    ; Enable flash programming
+    FLASH.ReProgram.ALL
+  IF &useboot==TRUE()
+  (
+    Data.LOAD.auto &parameters /noclear
+    Data.LOAD.auto &parameters2
+    FLASH.ReProgram.off
+  )
+  ELSE
+  (
+    Data.LOAD.auto &parameters
+    FLASH.ReProgram.off
+  )
+ENDDO
+
+; --------------------------------------------------------------------------------
+; Check if a physical flash sector is configured as OTP sector and protect.
+; OTP sectors must not be erased or programmed, otherwise a flash programming
+; error will be reported by hardware.
+; Mark all OTP sectors as OTP to enable special OTP handling by TRACE32.
+;
+; Arguments:
+;   &PFLASH   Program flash to be checked, e.g. PF0.
+;   &Address  Start address of program flash, including access class.
+;   &Sectors  Numbers of physical flash sectors in program flash.
+;
+CheckOTP:
+(
+  PARAMS &PFLASH &Address &Sectors
+  &PFLASH=STRing.SCANAndExtract(STRing.UPpeR("&PFLASH"),"PFLASH","0.")
+
+  PRIVATE &DMU_HF_PROCONOTP
+  &DMU_HF_PROCONOTP=D:0xF8050040+(0x100*&PFLASH)
+  
+  PRIVATE &Sector &SectorSize
+  &Sector=0.
+  &SectorSize=FLASH.SECTOR.SIZE(&Address)
+  
+  ; each PFLASH bank supports up to 6 PROCONOTP registers
+  ; each PROCONOTP register covers up to 32 physical sectors
+  PRIVATE &PROCONOTP &Mask
+  WHILE &Sector<&Sectors
+  (
+    IF (&Sector%32.)==0.
+    (
+      &PROCONOTP=Data.Long(&DMU_HF_PROCONOTP) ; read PROCONOTP register
+      &Mask=0x00000001
+      
+      ; prepare to switch to next PROCONOTP register within PFLASH bank
+      &DMU_HF_PROCONOTP=&DMU_HF_PROCONOTP+4. 
+    )
+
+    IF (&PROCONOTP&&Mask)!=0x00000000
+       FLASH.CHANGEtype (&Address+(&SectorSize*&Sector))++(&SectorSize-1.) /OTP
+
+    &Sector=&Sector+1.
+    &Mask=&Mask<<1.
+  )
+
+  RETURN
+)
+  
+; --------------------------------------------------------------------------------
+; Initialize Program- and Data Scratch Pad RAM
+; Initialization of PSRR and/or DSPR can be disabeld by BMHD, which causes bus
+; errors when loading the FLASH algorithm and contents to these RAMs.
+;
+; Arguments:
+;   &CodeBase  Base address in PSPR where FLASH algorithm is loaded.
+;   &DataBase  Base address in DSPR used as communication and data buffer.
+;   &InitSize  Size of PSPR and DSPR buffers.
+;
+InitSPR:
+(
+  PRIVATE &DMU_HF_PROCONRAM &DMU_HF_PROCONRAM_RAMIN &DMU_HF_PROCONRAM_RAMINSEL
+  PRIVATE &MTU_CLC_Addr &MTU_CLC &MC_CPUx_DSPR_ECCD &MC_CPUx_PSPR_ECCD
+  PRIVATE &MTU_CPUx_PMEM_ECCS_Addr &MTU_CPUx_DMEM_ECCS_Addr
+
+  PARAMS &CodeBase &DataBase &InitSize
+
+  &DMU_HF_PROCONRAM=Data.Long(D:0xF804008C)
+  &DMU_HF_PROCONRAM_RAMIN=&DMU_HF_PROCONRAM&0x3
+  &DMU_HF_PROCONRAM_RAMINSEL=(&DMU_HF_PROCONRAM>>16.)&0x3F
+  &MTU_CPUx_PMEM_ECCS_Addr="<unset>"
+  &MTU_CPUx_DMEM_ECCS_Addr="<unset>"
+
+  IF (&DMU_HF_PROCONRAM_RAMIN!=0x3)&&((&DMU_HF_PROCONRAM_RAMINSEL&(1.<<CORE()))==0.)
+  (
+    ; RAM was already initialized at reset -> no need for extra initialization
+    RETURN
+  )
+
+  ; otherwise temporarily disable ECC for PSPR and DSPR
+  &MTU_CLC_Addr="D:0xF0060000"
+  &MTU_CLC=Data.Long(&MTU_CLC_Addr)
+
+  ; activate MTU by MTU_CLC = 0x0
+  PER.Set.simple &MTU_CLC_Addr %Long 0x0
+
+  ; determine register addresses based on selected core
+  IF (CORE()==0)
+  (
+    &MTU_CPUx_PMEM_ECCS_Addr="D:0xF006120E"
+    &MTU_CPUx_DMEM_ECCS_Addr="D:0xF006100E"
+  )
+  ELSE IF (CORE()==1)
+  (
+    &MTU_CPUx_PMEM_ECCS_Addr="D:0xF006170E"
+    &MTU_CPUx_DMEM_ECCS_Addr="D:0xF006150E"
+  )
+  ELSE IF (CORE()==2)
+  (
+    &MTU_CPUx_PMEM_ECCS_Addr="D:0xF0061C0E"
+    &MTU_CPUx_DMEM_ECCS_Addr="D:0xF0061A0E"
+  )
+  ELSE IF (CORE()==3)
+  (
+    &MTU_CPUx_PMEM_ECCS_Addr="D:0xF006210E"
+    &MTU_CPUx_DMEM_ECCS_Addr="D:0xF0061F0E"
+  )
+  ELSE IF (CORE()==4)
+  (
+    &MTU_CPUx_PMEM_ECCS_Addr="D:0xF006260E"
+    &MTU_CPUx_DMEM_ECCS_Addr="D:0xF006240E"
+  )
+  ELSE IF (CORE()==5)
+  (
+    &MTU_CPUx_PMEM_ECCS_Addr="D:0xF0062B0E"
+    &MTU_CPUx_DMEM_ECCS_Addr="D:0xF006290E"
+  )
+
+  ; save MC_CPUx_PSPR_ECCD and MC_CPUx_DSPR_ECCD
+  &MC_CPUx_PSPR_ECCD=Data.Word(&MTU_CPUx_PMEM_ECCS_Addr)
+  &MC_CPUx_DSPR_ECCD=Data.Word(&MTU_CPUx_DMEM_ECCS_Addr)
+
+  ; MC_CPUx_PSPR_ECCD.CENE = 0
+  ; MC_CPUx_PSPR_ECCD.UENE = 0
+  PER.Set.simple &MTU_CPUx_PMEM_ECCS_Addr %Word &MC_CPUx_PSPR_ECCD&(~0x3)
+
+  ; MC_CPUx_DSPR_ECCD.CENE = 0
+  ; MC_CPUx_DSPR_ECCD.UENE = 0
+  PER.Set.simple &MTU_CPUx_DMEM_ECCS_Addr %Word &MC_CPUx_DSPR_ECCD&(~0x3)
+
+  Data.Set &CodeBase++(&InitSize-0x1) %Quad 0x0
+  Data.Set &DataBase++(&InitSize-0x1) %Quad 0x0
+
+  ; restore MC_CPUx_PSPR_ECCD and MC_CPUx_DSPR_ECCD
+  PER.Set.simple &MTU_CPUx_PMEM_ECCS_Addr %Word &MC_CPUx_PSPR_ECCD
+  PER.Set.simple &MTU_CPUx_DMEM_ECCS_Addr %Word &MC_CPUx_DSPR_ECCD
+  PER.Set.simple &MTU_CLC_Addr %Long &MTU_CLC
+
+  RETURN
+)
