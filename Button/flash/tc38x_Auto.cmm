@@ -1,19 +1,20 @@
 ; --------------------------------------------------------------------------------
-; @Title: Generic Flash script file for TC39x devices
+; @Title: Generic Flash script file for TC38x devices
 ; @Description:
 ;   Example script for flash declaration and programming of Infineon
-;   TriCore TC39x internal flash.
+;   TriCore TC38x internal flash.
 ; @Keywords: AURIX, Flash, Infineon, TriCore
 ; @Author: MAX
-; @Chip: TC39*
+; @Chip: TC38*
 ; @Copyright: (C) 1989-2016 Lauterbach GmbH, licensed for use with TRACE32(R) only
 ; --------------------------------------------------------------------------------
-; $Id: tc39x.cmm 4734 2017-09-15 17:09:34Z mobermaier $
+; $Rev: 4867 $
+; $Id: tc38x.cmm 4867 2017-10-20 11:09:04Z mobermaier $
 
 
 ; Script arguments:
 ;
-;   DO tc39x [PREPAREONLY] [CPU=<cpu>]
+;   DO tc38x [PREPAREONLY] [CPU=<cpu>]
 ;
 ;     PREPAREONLY only declares flash but does not execute flash programming
 ;
@@ -25,9 +26,9 @@
 ;
 ; Example:
 ;
-;   DO ~~/demo/tricore/flash/tc39x CPU=TC397X PREPAREONLY
+;   DO ~~/demo/tricore/flash/tc38x CPU=TC387H PREPAREONLY
 ;
-; Supported devices: All TC39xX and TC39xXE devices, e.g. TC397X.
+; Supported devices: All TC38xH and TC38xHE devices, e.g. TC387H.
 ;
 ; Flash:
 ;   3 MByte on-chip program flash 0    at 0x80000000--0x802FFFFF (cached)
@@ -36,17 +37,13 @@
 ;                                      or 0xA0300000--0xA05FFFFF (non cached)
 ;   3 MByte on-chip program flash 2    at 0x80600000--0x808FFFFF (cached)
 ;                                      or 0xA0600000--0xA08FFFFF (non cached)
-;   3 MByte on-chip program flash 3    at 0x80900000--0x80BFFFFF (cached)
-;                                      or 0xA0900000--0xA0BFFFFF (non cached)
-;   3 MByte on-chip program flash 4    at 0x80C00000--0x80EFFFFF (cached)
-;                                      or 0xA0C00000--0xA0EFFFFF (non cached)
-;   1 MByte on-chip program flash 5    at 0x80F00000--0x80FFFFFF (cached)
-;                                      or 0xA0F00000--0xA0FFFFFF (non cached)
+;   1 MByte on-chip program flash 3    at 0x80900000--0x809FFFFF (cached)
+;                                      or 0xA0900000--0xA09FFFFF (non cached)
 ;
-;   1 MByte on-chip data flash 0 EEPROM sectors  at 0xAF000000--0xAF0FFFFF
-;   24 KByte on-chip data flash 0 UCB sectors    at 0xAF400000--0xAF405FFF
-;   64 KByte on-chip data flash 0 CFS sectors    at 0xAF800000--0xAF80FFFF
-;   128 KByte on-chip data flash 1 HSM sectors   at 0xAFC00000--0xAFC1FFFF
+;   512 KByte on-chip data flash 0 EEPROM sectors  at 0xAF000000--0xAF07FFFF
+;    24 KByte on-chip data flash 0 UCB sectors     at 0xAF400000--0xAF405FFF
+;    64 KByte on-chip data flash 0 CFS sectors     at 0xAF800000--0xAF80FFFF
+;   128 KByte on-chip data flash 1 HSM sectors     at 0xAFC00000--0xAFC1FFFF
 ;
 ; RAM:
 ;    96 kByte Data Scratch-Pad RAM (DSPR) at        0xD0000000--0xD0017FFF
@@ -62,7 +59,7 @@
 ;   When using FLASH.Program command the download has to care about this
 ;   alignment.
 ;
-;   To avoid any aligment issues FLASH.ReProgram is recommended. Unused flash
+;   To avoid any alignment issues FLASH.ReProgram is recommended. Unused flash
 ;   data of affected sectors is programmed to 0x0.
 ;
 ;   FLASH.AUTO is not working for sectors with enabled ECC and uncorrectable
@@ -73,7 +70,7 @@
 ;   Do not enable HSM boot when no valid HSM code is present. This will lock
 ;   your device permanently. See the Infineon documentation and contact your
 ;   Infineon FAE for more information on HSM.
-;   See ~~/demo/tricore/flash/tc39x-hsm.cmm for programming the HSM.
+;   See ~~/demo/tricore/flash/tc38x-hsm.cmm for programming the HSM.
 ;
 ;   Pay special attention when modifying the UCB. An invalid or erroneous
 ;   content will lock your device permanently. This also happens in case the
@@ -90,7 +87,7 @@ ENTRY &parameters &parameters2 &useboot
 IF VERSION.BUILD.BASE()>=48610.
   &param_dualport=STRing.SCANAndExtract(STRing.UPpeR("&parameters"),"DUALPORT=","0")
 
-; --------------------------------------------------------------------------------
+; ------------------------------------------------------------------------------
 ; Initialize
 
 IF SYStem.MODE()<5.
@@ -98,14 +95,14 @@ IF SYStem.MODE()<5.
 
   IF "&param_cpu"!=""
     SYStem.CPU &param_cpu
-  IF !CPUIS(TC39*)
-    SYStem.CPU TC39*
+  IF !CPUIS(TC38*)
+    SYStem.CPU TC38*
 
   CORE.select 0.        ; CPU0 is selected for flash programming.
   SYStem.Up
 )
 
-; Disable Watchdog Timers on TC39x
+; Disable Watchdog Timers on TC38x
 
 ; Disable the Safety Watchdog Timer (overall system level watchdog):
 PER.Set.simple D:0xF00362AC %Long 0x00000008 // SCU_WDTSCON1, Request to disable the WDT
@@ -114,10 +111,8 @@ PER.Set.simple D:0xF0036250 %Long 0x00000008 // SCU_WDTCPU0CON1, Request to disa
 PER.Set.simple D:0xF003625C %Long 0x00000008 // SCU_WDTCPU1CON1, Request to disable the WDT
 PER.Set.simple D:0xF0036268 %Long 0x00000008 // SCU_WDTCPU2CON1, Request to disable the WDT
 PER.Set.simple D:0xF0036274 %Long 0x00000008 // SCU_WDTCPU3CON1, Request to disable the WDT
-PER.Set.simple D:0xF0036280 %Long 0x00000008 // SCU_WDTCPU4CON1, Request to disable the WDT
-PER.Set.simple D:0xF003628C %Long 0x00000008 // SCU_WDTCPU5CON1, Request to disable the WDT
 
-; --------------------------------------------------------------------------------
+; ------------------------------------------------------------------------------
 ; Flash Declaration
 
 FLASH.RESet
@@ -136,32 +131,22 @@ FLASH.Create  8. 0xA0700000--0xA07FFFFF 0x4000 TARGET Long 2.  ; PS1, S64..S127
 FLASH.Create  9. 0xA0800000--0xA08FFFFF 0x4000 TARGET Long 2.  ; PS2, S128..S191
 ; Program flash PF3
 FLASH.Create 10. 0xA0900000--0xA09FFFFF 0x4000 TARGET Long 3.  ; PS0, S0..S63
-FLASH.Create 11. 0xA0A00000--0xA0AFFFFF 0x4000 TARGET Long 3.  ; PS1, S64..S127
-FLASH.Create 12. 0xA0B00000--0xA0BFFFFF 0x4000 TARGET Long 3.  ; PS2, S128..S191
-; Program flash PF4
-FLASH.Create 13. 0xA0C00000--0xA0CFFFFF 0x4000 TARGET Long 4.  ; PS0, S0..S63
-FLASH.Create 14. 0xA0D00000--0xA0DFFFFF 0x4000 TARGET Long 4.  ; PS1, S64..S127
-FLASH.Create 15. 0xA0E00000--0xA0EFFFFF 0x4000 TARGET Long 4.  ; PS2, S128..S191
-; Program flash PF5
-FLASH.Create 16. 0xA0F00000--0xA0FFFFFF 0x4000 TARGET Long 5.  ; PS0, S0..S63
 
 ; Data flash DF0
-FLASH.Create 17. 0xAF000000--0xAF0FFFFF 0x1000 TARGET Long /INFO "EEPROM"         ; DF0, DF0_EEPROM0..DF0_EEPROM255
-FLASH.Create 18. 0xAF400000--0xAF4007FF 0x0200 TARGET    Long /INFO "UCB BMHD ORIG"  ; DF0, DF0_UCB0..DF0_UCB3
-FLASH.Create 18. 0xAF400800--0xAF400FFF 0x0200 NOP    Long /INFO "UCB misc"       ; DF0, DF0_UCB4..DF0_UCB7
-FLASH.Create 18. 0xAF401000--0xAF4017FF 0x0200 TARGET    Long /INFO "UCB BMHD COPY"  ; DF0, DF0_UCB8..DF0_UCB11
-FLASH.Create 18. 0xAF401800--0xAF405FFF 0x0200 NOP    Long /INFO "UCB misc"       ; DF0, DF0_UCB12..DF0_UCB47
-FLASH.Create 19. 0xAF800000--0xAF80FFFF 0x0200 NOP    Long /INFO "CFS"            ; DF0, DF0_CFS0..DF0_CFS127
+FLASH.Create 17. 0xAF000000--0xAF07FFFF 0x1000 TARGET Long   ; DF0, DF0_EEPROM0..DF0_EEPROM127
+FLASH.Create 18. 0xAF400000--0xAF4007FF 0x0200 NOP    Long   ; DF0, DF0_UCB0..DF0_UCB3
+FLASH.Create 18. 0xAF400800--0xAF400FFF 0x0200 NOP    Long   ; DF0, DF0_UCB4..DF0_UCB7
+FLASH.Create 18. 0xAF401000--0xAF4017FF 0x0200 NOP    Long   ; DF0, DF0_UCB8..DF0_UCB11
+FLASH.Create 18. 0xAF401800--0xAF405FFF 0x0200 NOP    Long   ; DF0, DF0_UCB12..DF0_UCB47
+FLASH.Create 19. 0xAF800000--0xAF80FFFF 0x0200 NOP    Long   ; DF0, DF0_CFS0..DF0_CFS127
 ; Data flash DF1
-FLASH.Create 20. 0xAFC00000--0xAFC1FFFF 0x1000 NOP    Long /INFO "HSM"  ; DF1, DF1_EEPROM (HSM)
+FLASH.Create 20. 0xAFC00000--0xAFC1FFFF 0x1000 NOP    Long   ; DF1, DF1_EEPROM (HSM)
 
 ; Check for OTP sectors (special OTP handling required, see documentation)
 GOSUB CheckOTP "PFLASH0" "C:0xA0000000" "192."
 GOSUB CheckOTP "PFLASH1" "C:0xA0300000" "192."
 GOSUB CheckOTP "PFLASH2" "C:0xA0600000" "192."
-GOSUB CheckOTP "PFLASH3" "C:0xA0900000" "192."
-GOSUB CheckOTP "PFLASH4" "C:0xA0C00000" "192."
-GOSUB CheckOTP "PFLASH5" "C:0xA0F00000" "64."
+GOSUB CheckOTP "PFLASH3" "C:0xA0900000" "64."
 
 ; Cached program flash address range
 FLASH.CreateALIAS 0x80000000--0x80FFFFFF 0xA0000000

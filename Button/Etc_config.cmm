@@ -40,7 +40,7 @@ MAIN:
 		)
 		CORE_CHEK.4: 	CHOOSEBOX "5 CORE"
 		(
-			IF ("&CPU_CHECK"=="TC22"||"&CPU_CHECK"=="TC23"||"&CPU_CHECK"=="TC26"||"&CPU_CHECK"=="TC27")
+			IF ("&CPU_CHECK"=="TC22"||"&CPU_CHECK"=="TC23"||"&CPU_CHECK"=="TC26"||"&CPU_CHECK"=="TC27"||"&CPU_CHECK"=="TC38")
 			(
 				DIALOG.SET CORE_CHEK.0
 				PRINT "Current core is &CPU_TYPE, This option can not select."
@@ -48,7 +48,7 @@ MAIN:
 		)
 		CORE_CHEK.5: 	CHOOSEBOX "6 CORE"
 		(
-			IF ("&CPU_CHECK"=="TC22"||"&CPU_CHECK"=="TC23"||"&CPU_CHECK"=="TC26"||"&CPU_CHECK"=="TC27")
+			IF ("&CPU_CHECK"=="TC22"||"&CPU_CHECK"=="TC23"||"&CPU_CHECK"=="TC26"||"&CPU_CHECK"=="TC27"||"&CPU_CHECK"=="TC38")
 			(
 				DIALOG.SET CORE_CHEK.0
 				PRINT "Current core is &CPU_TYPE, This option can not select."

@@ -20,4 +20,5 @@ V8.0	Program name changed.
 		program more stabilized.
 		TC22x, TC23x support.
 V8.1 	Critical bug is fixed.
-V12.0 	Aurix2G support.
+V12.0 	Aurix2G support.(TC39X)
+V13.0 	Aurix2G support.(TC38x)

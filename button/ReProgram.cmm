@@ -149,12 +149,12 @@ ELSE
 
 DIALOG
 (
-	HEADER "SMART Reprogram V12.0"
+	HEADER "SMART Reprogram V13.0"
 	
 	POS 0. 0. 33. 3.
 	BOX "MCU type select"
 	POS 1. 1. 31. 1.
-	MCU_TYPE: PULLDOWN "TC21x,TC22x,TC23x,TC26x,TC27x,TC29x,TC39x"
+	MCU_TYPE: PULLDOWN "TC21x,TC22x,TC23x,TC26x,TC27x,TC29x,TC38x,TC39x"
 	(
 		GOSUB CPU_TYPE_CHECK_SUB
 		ENTRY &CPU_TYPE_TEMP
@@ -495,6 +495,10 @@ REPROGRAM_SUB:
 	(
 		DO ~~\Button\flash\tc29x_Auto.cmm "&PATH_SELECTED_REPROGRAM" "&PATH_SELECTED_BOOT_REPROGRAM" &USEBOOT_REPROGRAM
 	)
+	ELSE IF "&CPU_TYPE_MID_REPROGRAM"=="TC38"
+	(
+		DO ~~\Button\flash\tc38x_Auto.cmm "&PATH_SELECTED_REPROGRAM" "&PATH_SELECTED_BOOT_REPROGRAM" &USEBOOT_REPROGRAM
+	)	
 	ELSE IF "&CPU_TYPE_MID_REPROGRAM"=="TC39"
 	(
 		DO ~~\Button\flash\tc39x_Auto.cmm "&PATH_SELECTED_REPROGRAM" "&PATH_SELECTED_BOOT_REPROGRAM" &USEBOOT_REPROGRAM
@@ -554,6 +558,10 @@ REPROGRAM_BOOT_SUB:
 	(
 		DO ~~\Button\flash\tc29x_Auto.cmm "&PATH_SELECTED_REPROGRAM" ;"&PATH_SELECTED_BOOT_REPROGRAM"PLACE HOLDER
 	)
+	ELSE IF "&CPU_TYPE_MID_REPROGRAM"=="TC38"
+	(
+		DO ~~\Button\flash\tc38x_Auto.cmm "&PATH_SELECTED_REPROGRAM" ;"&PATH_SELECTED_BOOT_REPROGRAM"PLACE HOLDER
+	)	
 	ELSE IF "&CPU_TYPE_MID_REPROGRAM"=="TC39"
 	(
 		DO ~~\Button\flash\tc39x_Auto.cmm "&PATH_SELECTED_REPROGRAM" ;"&PATH_SELECTED_BOOT_REPROGRAM"PLACE HOLDER
@@ -641,7 +649,46 @@ END_PROCESS2_SUB:
 	)
 	ELSE IF ("&GENERATION"=="TC3")
 	(
-		IF ("&CPU_TYPE_MID_PROCESS2"!="TC39x")
+		IF ("&CPU_TYPE_MID_PROCESS2"=="TC38")
+		(
+			IF "&CORE_SELECTED_PROCESS2"=="SINGLE"
+			(
+				Core.assign  1.
+			)
+			ELSE IF "&CORE_SELECTED_PROCESS2"=="DOUBLE"
+			(
+				
+				Core.assign  1. 2.
+				IF &MULTI_CORE_WINDOW_PROCESS2==TRUE()
+				(
+					d.l /core 0
+					d.l /core 1
+				)
+				
+			)
+			ELSE IF "&CORE_SELECTED_PROCESS2"=="TRIPLE"
+			(
+				Core.assign  1. 2. 3.
+				IF &MULTI_CORE_WINDOW_PROCESS2==TRUE()
+				(
+					d.l /core 0
+					d.l /core 1
+					d.l /core 2
+				)
+			)
+			ELSE IF "&CORE_SELECTED_PROCESS2"=="QUAD"
+			(
+				Core.assign  1. 2. 3. 4.
+				IF &MULTI_CORE_WINDOW_PROCESS2==TRUE()
+				(
+					d.l /core 0
+					d.l /core 1
+					d.l /core 2
+					d.l /core 3
+				)
+			)
+		)
+		ELSE IF ("&CPU_TYPE_MID_PROCESS2"=="TC39")
 		(
 			IF "&CORE_SELECTED_PROCESS2"=="SINGLE"
 			(
@@ -705,6 +752,7 @@ END_PROCESS2_SUB:
 				)
 			)
 		)
+
 
 	)
 
