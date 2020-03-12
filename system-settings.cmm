@@ -1,0 +1,142 @@
+;======================================================================
+; Default startup program for TRACE32                                 |
+;---------------------------------------------------------------------|
+;                                                                     |
+; This startup program can be modified according to your needs.       |
+;                                                                     |
+; (c) Copyright by Lauterbach GmbH, 1998-2012                         |
+;                                                                     |
+; $Id: t32.cmm 5496 2013-04-24 08:35:44Z mobermeir $
+;======================================================================
+
+;----------------------------------------------------------------------
+; Choose hex mode as default for input values
+;----------------------------------------------------------------------
+  RADIX hex
+
+
+;----------------------------------------------------------------------
+; Add some extra buttons to the toolbar
+;----------------------------------------------------------------------
+	&STRING=string.mid(title(),22.,3.)
+	PRINT "title = &STRING"
+
+	IF "&STRING"!="GTM"
+	(
+	  MENU.reprogram
+	  (
+			ADD
+			TOOLBAR
+			(
+				TOOLITEM  "ReProgram"		"RP"	 "Do C:\T32\Button\ReProgram.cmm"
+				TOOLITEM  "Reset&GO"		"RG"	 "Do C:\T32\Button\Reset_go.cmm"
+				TOOLITEM  "Reset"			"RS"	 "Do C:\T32\Button\Reset.cmm"
+				SEPARATOR
+				TOOLITEM  "Window save"		"WS"	 "Do C:\T32\Button\WS.cmm"
+				TOOLITEM  "Window load"		"WL"	 "Do C:\T32\Button\WL.cmm"
+				TOOLITEM  "Direct save"		"DS"	 "Do C:\T32\Button\WO.cmm"
+				SEPARATOR
+				TOOLITEM  "GTM_config"		"GM"	 "Do C:\T32\Button\GTM_mcs.cmm"
+			)
+		)
+	)
+	ELSE
+	(
+	  MENU.reprogram
+	  (
+			ADD
+			TOOLBAR
+			(
+				TOOLITEM  "Source/List"      ":list"     "List.auto"
+				TOOLITEM  "Memory Dump"      ":dump"     "Data.dump"
+				TOOLITEM  "Register"         ":reg"      "Register.view"
+				SEPARATOR
+				TOOLITEM  "Watch"            ":varwatch" "Var.Watch"
+				TOOLITEM  "Stack"            ":varframe" "Frame.view /Locals /Caller"
+				TOOLITEM  "Automatic Watch"  ":varref"   "Var.Ref"
+				SEPARATOR
+				TOOLITEM  "List Breakpoints" ":break"    "Break.List"
+				TOOLITEM  "List Symbols"     ":symbols"  "sYmbol.Browse"
+				TOOLITEM  "System Settings"  ":config"   "SYStem.state"
+			)
+		)
+	)
+
+
+
+
+;----------------------------------------------------------------------
+; choose a different TRACE32 menu file e.g. Japanese (default: english)
+;----------------------------------------------------------------------
+
+  IF LANGUAGE()!=""
+  (
+     LOCAL  &menuname
+     &menuname="~~/t32"+LANGUAGE()+".men"
+     IF OS.FILE(&menuname)
+        MENU.ReProgram &menuname
+  )
+
+
+;----------------------------------------------------------------------
+; Integrator Probes pulldown (Logic Analyzer)
+;----------------------------------------------------------------------
+
+  IF Integrator()
+  (
+     IF (I.ANALOG()>0)
+     (
+        IF (I.ANALOG()&1)==1
+        (
+         ; Reset MUX setup
+           I.PI_MUX_RESET
+
+         ; Define Addresslines
+           I.PI_MUX  amux.0   I.A0
+           I.PI_MUX  amux.1   I.A1
+           I.PI_MUX  amux.2   I.A2
+           I.PI_MUX  amux.3   I.A3
+           I.PI_MUX  amux.4   I.A4
+           I.PI_MUX  amux.5   I.A5
+           I.PI_MUX  amux.6   I.A6
+           I.PI_MUX  amux.7   I.A7
+           I.PI_MUX  amux.8   I.A8
+           I.PI_MUX  amux.9   I.A9
+           I.PI_MUX  amux.10  I.A10
+           I.PI_MUX  amux.11  I.A11
+
+         ; Programming of MUX setup
+           I.PI_MUX_PROGRAM
+
+         ; Menu-ADC-Trigger
+           MENU.ReProgram ~~/t32adc.men
+        )
+        ELSE
+        (
+           PRINT "Please connect AnalogProbe to connector A for trigger support!"
+        )
+     )
+     IF (I.USB()>0)
+     (
+        IF (I.USB()&1)==1
+        (
+           MENU.ReProgram ~~/menprobeusb_def.men
+        )
+        ELSE
+        (
+           PRINT "Please connect USB2 Probe to connector A/B!"
+        )
+     )
+  )
+
+
+;----------------------------------------------------------------------
+; Recall and define TRACE32 command history file
+;----------------------------------------------------------------------
+  AUTOSTORE , HISTORY BOOKMARK
+
+
+ENDDO
+
+;======================================================================
+

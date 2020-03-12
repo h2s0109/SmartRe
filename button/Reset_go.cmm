@@ -1,5 +1,6 @@
 b::
 Sys.d
 Sys.u
-R.S PC 0XA0000020
 GO
+WAIT 50.ms
+PER.Set.simple D:0xF019FD38 %Long 0x11000000
