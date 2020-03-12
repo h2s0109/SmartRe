@@ -103,8 +103,7 @@ Section Uninstall
   RMDir /r "$INSTDIR\Button"
   ReadRegStr $R0 ${PRODUCT_UNINST_ROOT_KEY} "${PRODUCT_UNINST_KEY}" "installversion"
   ${If} $R0 == "1"
-  Delete   "$INSTDIR\t32s.cmm"
-  MessageBox MB_OK "$$R0 is '$R0'"
+  Delete   "$INSTDIR\system-settings.cmm"
   ${Else}
   Delete   "$INSTDIR\t32.cmm"
   ${EndIf}
