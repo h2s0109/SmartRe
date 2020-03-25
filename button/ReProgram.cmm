@@ -149,7 +149,7 @@ ELSE
 
 DIALOG
 (
-	HEADER "SMART Reprogram V14.0"
+	HEADER "SMART Reprogram V14.1"
 	
 	POS 0. 0. 33. 3.
 	BOX "MCU type select"

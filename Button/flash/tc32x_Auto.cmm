@@ -1,14 +1,14 @@
 ; --------------------------------------------------------------------------------
-; @Title: Generic Flash script file for TC38x devices
+; @Title: Generic Flash script file for TC32x devices
 ; @Description:
-;   Script for flash declaration and programming of Infineon TriCore TC38x
+;   Script for flash declaration and programming of Infineon TriCore TC32x
 ;   internal flash.
 ; @Keywords: AURIX, AURIX2G, FLASH, internal, Infineon, TriCore
 ; @Author: MAX
-; @Chip: TC38*
+; @Chip: TC32*
 ; @Copyright: (C) 1989-2019 Lauterbach GmbH, licensed for use with TRACE32(R) only
 ; --------------------------------------------------------------------------------
-; $Id: tc38x.cmm 7332 2019-09-03 16:06:32Z mobermaier $
+; $Id: tc32x.cmm 7332 2019-09-03 16:06:32Z mobermaier $
 
 
 ; Important information, read this before using this script:
@@ -26,7 +26,7 @@
 ;
 ; Script arguments:
 ;
-;   DO tc38x.cmm [PREPAREONLY] [CPU=<cpu>] [DUALPORT=0|1]
+;   DO tc32x.cmm [PREPAREONLY] [CPU=<cpu>] [DUALPORT=0|1]
 ;
 ;     PREPAREONLY only declares flash but does not execute flash programming
 ;
@@ -38,22 +38,21 @@
 ;
 ; Example:
 ;
-;   DO ~~/demo/tricore/flash/tc38x.cmm CPU=TC387QP PREPAREONLY
+;   DO ~~/demo/tricore/flash/tc32x.cmm CPU=TC327LP PREPAREONLY
 ;
 ; Supported devices:
 ;
-;   All TC38x devices, e.g. TC387QP
+;   All TC32x devices, e.g. TC327LP
 ;
 ; Program FLASH:
-;   FSIZE=0xC: 10 MB PFLASH at 0x80000000--0x809FFFFF (cached)
-;                           or 0xA0000000--0xA09FFFFF (non cached)
-;   FSIZE=0xB:  8 MB PFLASH at 0x80000000--0x803FFFFF (cached)
-;                              0x80600000--0x809FFFFF (cached)
-;                           or 0xA0000000--0xA03FFFFF (non cached)
-;                              0xA0600000--0xA09FFFFF (non cached)
+;   FSIZE=0x7: 4 MB PFLASH at 0x80000000--0x801FFFFF (cached)
+;                             0x80300000--0x804FFFFF (cached)
+;                          or 0xA0000000--0xA01FFFFF (non cached)
+;                             0xA0300000--0xA04FFFFF (non cached)
 ;
 ; Data FLASH (single-ended mode):
-;   512 KByte DFLASH at 0xAF000000--0xAF07FFFF (EEPROM)
+;   128 KByte DFLASH at 0xAF000000--0xAF01FFFF (EEPROM)
+; or 96 KByte DFLASH at 0xAF000000--0xAF017FFF (EEPROM)
 ;   128 KByte DFLASH at 0xAFC00000--0xAFC1FFFF (EEPROM or HSM)
 ;   Complement-sensing mode reduces size to the half.
 ;
@@ -63,7 +62,7 @@
 ;
 ; RAM (minimum Scratch-Pad RAM):
 ;    96 KByte DSPR (Data Scratch-Pad RAM)        at 0xD0000000--0xD0017FFF
-;    64 KByte PSPR (Instruction Scratch-Pad RAM) at 0xC0000000--0xC000FFFF
+;     8 KByte PSPR (Instruction Scratch-Pad RAM) at 0xC0000000--0xC0002FFF
 ;
 ; CAUTION:
 ;
@@ -121,33 +120,19 @@
 ;                                BROM_TC.011.
 ;       WDBG_LOCK                Debug interface will be locked by UCB_DBG.
 
-GLOBAL &GLOBAL_CHECK &PATH_SELECTED_REPROGRAM_G  &PATH_SELECTED_BOOT_REPROGRAM_G &USEBOOT_REPROGRAM_G
-&GLOBAL_CHECK=0.
-LOCAL &parameters &param_prepareonly &param_cpu &param_dualport &param_hook &this_file
-IF &GLOBAL_CHECK==0.
-(
-ENTRY &PATH_SELECTED_REPROGRAM_ &PATH_SELECTED_BOOT_REPROGRAM &USEBOOT_REPROGRAM 
-)
-ELSE
-(
-ENTRY %LINE &parameters
-)
-IF (VERSION.BUILD()<89310.)
-(
-  PRINT %ERROR "This flash script requires at least R.2017.09 or S.2017.11"
-  ENDDO "UNSUPPORTED"
-)
+LOCAL &parameters &param_prepareonly &param_cpu &param_dualport
+ENTRY &parameters &parameters2 &useboot
 
-&this_file='"'+OS.PPF()+'"'
 &param_prepareonly=(STRing.SCAN(STRing.UPpeR("&parameters"),"PREPAREONLY",0)!=-1)
 &param_cpu=STRing.SCANAndExtract(STRing.UPpeR("&parameters"),"CPU=","")
 &param_dualport=STRing.SCANAndExtract(STRing.UPpeR("&parameters"),"DUALPORT=","0")
 &param_hook=STRing.SCANAndExtract(STRing.UPpeR("&parameters"),"HOOKCMD=","")
 
-LOCAL &SCU_CHIPID &CHREV &FSIZE
+LOCAL &SCU_CHIPID &CHREV &FSIZE &DSIZE
 &SCU_CHIPID=0x0
 &CHREV=0x0
 &FSIZE=0x0
+&DSIZE=0.
 
 LOCAL &HFMODE &SFMODE
 &HFMODE=0x0
@@ -166,27 +151,22 @@ IF "&param_hook"!=""
 
 IF SYStem.MODE()<5.
 (
-  SYStem.RESet
 
   IF "&param_cpu"!=""
     SYStem.CPU &param_cpu
-  IF !CPUIS(TC38*)
-    SYStem.CPU TC38*
+  IF !CPUIS(TC32*)
+    SYStem.CPU TC32*
 
   CORE.select 0.  ; CPU0 is selected for flash programming.
   SYStem.Up
 )
 
-; Disable Watchdog Timers on TC38x
+; Disable Watchdog Timers on TC32x
 
 ; Disable Safety Watchdog Timer (overall system level watchdog)
 PER.Set.simple D:0xF00362AC %Long 0x00000008  ; SCU_WDTSCON1, Request to disable the WDT
 ; Disable CPU Watchdog Timer
 PER.Set.simple D:0xF0036250 %Long 0x00000008  ; SCU_WDTCPU0CON1, Request to disable the WDT
-PER.Set.simple D:0xF003625C %Long 0x00000008  ; SCU_WDTCPU1CON1, Request to disable the WDT
-PER.Set.simple D:0xF0036268 %Long 0x00000008  ; SCU_WDTCPU2CON1, Request to disable the WDT
-IF (CPUIS("TC38?Q*"))
-  PER.Set.simple D:0xF0036274 %Long 0x00000008  ; SCU_WDTCPU3CON1, Request to disable the WDT
 
 ; --------------------------------------------------------------------------------
 ; Flash Declaration
@@ -194,52 +174,29 @@ IF (CPUIS("TC38?Q*"))
 ; Get FLASH sizes from chip
 GOSUB ReadChipId
 GOSUB ReadProConUsr
+&DSIZE=128. ; 128 KB DFLASH
+IF (&FSIZE==0x2)
+  &DSIZE=96. ; 96 KB DFLASH
 
 FLASH.RESet
 
-IF (&FSIZE==0xC) ; 10 MB PFLASH - TC38x 160F
+; Program FLASH
+IF (&FSIZE==0x4) ; 2 MB PFLASH- TC32x 32F
 (
   ; Program flash PF0
   FLASH.Create  1. 0xA0000000--0xA00FFFFF 0x4000 TARGET Long 0.  ; PS0, S0..S63
   FLASH.Create  2. 0xA0100000--0xA01FFFFF 0x4000 TARGET Long 0.  ; PS1, S64..S127
-  FLASH.Create  3. 0xA0200000--0xA02FFFFF 0x4000 TARGET Long 0.  ; PS2, S128..S191
-  ; Program flash PF1
-  FLASH.Create  4. 0xA0300000--0xA03FFFFF 0x4000 TARGET Long 1.  ; PS0, S0..S63
-  FLASH.Create  5. 0xA0400000--0xA04FFFFF 0x4000 TARGET Long 1.  ; PS1, S64..S127
-  FLASH.Create  6. 0xA0500000--0xA05FFFFF 0x4000 TARGET Long 1.  ; PS2, S128..S191
-  ; Program flash PF2
-  FLASH.Create  7. 0xA0600000--0xA06FFFFF 0x4000 TARGET Long 2.  ; PS0, S0..S63
-  FLASH.Create  8. 0xA0700000--0xA07FFFFF 0x4000 TARGET Long 2.  ; PS1, S64..S127
-  FLASH.Create  9. 0xA0800000--0xA08FFFFF 0x4000 TARGET Long 2.  ; PS2, S128..S191
-  ; Program flash PF3
-  FLASH.Create 10. 0xA0900000--0xA09FFFFF 0x4000 TARGET Long 3.  ; PS0, S0..S63
 
   ; Check for OTP sectors (special OTP handling required, see documentation)
-  GOSUB CheckOTP "PFLASH0" "C:0xA0000000" "192."
-  GOSUB CheckOTP "PFLASH1" "C:0xA0300000" "192."
-  GOSUB CheckOTP "PFLASH2" "C:0xA0600000" "192."
-  GOSUB CheckOTP "PFLASH3" "C:0xA0900000" "64."
+  GOSUB CheckOTP "PFLASH0" "C:0xA0000000" "128."
 )
-ELSE IF (&FSIZE==0xB) ; 8 MB PFLASH - TC38x 128F
+ELSE IF (&FSIZE==0x2) ; 1 MB PFLASH- TC32x 16F
 (
   ; Program flash PF0
   FLASH.Create  1. 0xA0000000--0xA00FFFFF 0x4000 TARGET Long 0.  ; PS0, S0..S63
-  FLASH.Create  2. 0xA0100000--0xA01FFFFF 0x4000 TARGET Long 0.  ; PS1, S64..S127
-  FLASH.Create  3. 0xA0200000--0xA02FFFFF 0x4000 TARGET Long 0.  ; PS2, S128..S191
-  ; Program flash PF1
-  FLASH.Create  4. 0xA0300000--0xA03FFFFF 0x4000 TARGET Long 1.  ; PS0, S0..S63
-  ; Program flash PF2
-  FLASH.Create  7. 0xA0600000--0xA06FFFFF 0x4000 TARGET Long 2.  ; PS0, S0..S63
-  FLASH.Create  8. 0xA0700000--0xA07FFFFF 0x4000 TARGET Long 2.  ; PS1, S64..S127
-  FLASH.Create  9. 0xA0800000--0xA08FFFFF 0x4000 TARGET Long 2.  ; PS2, S128..S191
-  ; Program flash PF3
-  FLASH.Create 10. 0xA0900000--0xA09FFFFF 0x4000 TARGET Long 3.  ; PS0, S0..S63
 
   ; Check for OTP sectors (special OTP handling required, see documentation)
-  GOSUB CheckOTP "PFLASH0" "C:0xA0000000" "192."
-  GOSUB CheckOTP "PFLASH1" "C:0xA0300000" "64."
-  GOSUB CheckOTP "PFLASH2" "C:0xA0600000" "192."
-  GOSUB CheckOTP "PFLASH3" "C:0xA0900000" "64."
+  GOSUB CheckOTP "PFLASH0" "C:0xA0000000" "64."
 )
 ELSE
 (
@@ -250,16 +207,39 @@ ELSE
 ; Cached program flash address range
 FLASH.CreateALIAS 0x80000000--0x80FFFFFF 0xA0000000
 
-; Data flash DF0
-IF (&HFMODE==0x0)
+; Data FLASH
+IF (&DSIZE==128.) ; 128 KB DFLASH
 (
-  ; single ended mode - 512 KB EEPROM
-  FLASH.Create 17. 0xAF000000--0xAF07FFFF 0x1000 TARGET Long /INFO "EEPROM"         ; DF0, DF0_EEPROM0..DF0_EEPROM127
+  ; Data flash DF0
+  IF (&HFMODE==0x0)
+  (
+    ; single ended mode - 128 KB EEPROM
+    FLASH.Create 17. 0xAF000000--0xAF01FFFF 0x1000 TARGET Long /INFO "EEPROM"         ; DF0, DF0_EEPROM0..DF0_EEPROM31
+  )
+  ELSE
+  (
+    ; complement sensing mode - 64 KB EEPROM
+    FLASH.Create 17. 0xAF000000--0xAF00FFFF 0x0800 TARGET Long /INFO "EEPROM"         ; DF0, DF0_EEPROM0..DF0_EEPROM15
+  )
+)
+ELSE IF (&DSIZE==96.) ; 96 KB DFLASH
+(
+  ; Data flash DF0
+  IF (&HFMODE==0x0)
+  (
+    ; single ended mode - 96 KB EEPROM
+    FLASH.Create 17. 0xAF000000--0xAF017FFF 0x1000 TARGET Long /INFO "EEPROM"         ; DF0, DF0_EEPROM0..DF0_EEPROM23
+  )
+  ELSE
+  (
+    ; complement sensing mode - 48 KB EEPROM
+    FLASH.Create 17. 0xAF000000--0xAF00CFFF 0x0800 TARGET Long /INFO "EEPROM"         ; DF0, DF0_EEPROM0..DF0_EEPROM13
+  )
 )
 ELSE
 (
-  ; complement sensing mode - 256 KB EEPROM
-  FLASH.Create 17. 0xAF000000--0xAF03FFFF 0x0800 TARGET Long /INFO "EEPROM"         ; DF0, DF0_EEPROM0..DF0_EEPROM63
+  PRINT %ERROR "unspported DFLASH size &DSIZE"
+  ENDDO "UNSUPPORTED"
 )
 FLASH.Create 18. 0xAF400000--0xAF4007FF 0x0200 NOP    Long /INFO "UCB BMHD ORIG"  ; DF0, DF0_UCB0..DF0_UCB3
 FLASH.Create 18. 0xAF400800--0xAF400FFF 0x0200 NOP    Long /INFO "UCB misc"       ; DF0, DF0_UCB4..DF0_UCB7
@@ -284,31 +264,37 @@ IF &param_dualport==0
 ELSE
   FLASH.TARGET 0xC0000000 0xD0000000 0x4000 ~~/demo/tricore/flash/long/tc3.bin /DualPort
 
-FLASH.HOOKSCRIPT &this_file
+
 
 ; Initialize PSPR & DSPR ECC (if required)
 GOSUB InitSPR
 
 ; Flash script ends here if called with parameter PREPAREONLY
 IF &param_prepareonly
-  ENDDO PREPARE_WITH_HOOKSCRIPT_DONE
+  ENDDO PREPAREDONE
 
 ; --------------------------------------------------------------------------------
 ; download application
-&GLOBAL_CHECK=1.
-FLASH.ReProgram.ALL
-IF &USEBOOT_REPROGRAM==TRUE()
-(
-  Data.LOAD.auto &PATH_SELECTED_REPROGRAM /noclear
-  Data.LOAD.auto &PATH_SELECTED_BOOT_REPROGRAM
-  FLASH.ReProgram.off
-)
-ELSE
-(
-  Data.LOAD.auto &PATH_SELECTED_REPROGRAM
-  FLASH.ReProgram.off
-)
 
+  ;DIALOG.YESNO "Program internal flash memory?"
+  ;LOCAL &progflash
+  ;ENTRY &progflash
+  ;IF &progflash
+  ;(
+  ; Enable flash programming
+  FLASH.ReProgram.ALL
+  IF &useboot==TRUE()
+  (
+    Data.LOAD.auto &parameters /noclear
+    Data.LOAD.auto &parameters2
+  ; Finally program flash memory
+  FLASH.ReProgram.off
+)
+  ELSE
+  (
+    Data.LOAD.auto &parameters
+    FLASH.ReProgram.off
+  )
 ENDDO
 
 ; --------------------------------------------------------------------------------
@@ -392,7 +378,7 @@ InitSPR:
   &MTU_MEMTEST1_Addr="D:0xF0060014"
   &MTU_MEMTEST1=Data.Long(&MTU_MEMTEST1_Addr)
 
-; determine register addresses based on selected core
+  ; determine register addresses based on selected core
   IF (CORE.LOGICALTOPHYSICAL(CORE())==0)
   (
     ; enable SSH and init DSPR and PSPR
@@ -402,30 +388,6 @@ InitSPR:
     GOSUB InitRAM_ByMTU "D:0xF0061000" ; CPU0_DMEM
     GOSUB InitRAM_ByMTU "D:0xF0063200" ; CPU0_DMEM
     GOSUB InitRAM_ByMTU "D:0xF0061200" ; CPU0_PMEM
-  )
-  ELSE IF (CORE.LOGICALTOPHYSICAL(CORE())==1)
-  (
-    ; enable SSH and init DSPR and PSPR
-    ; DSPR is initilized by two independent SSH
-    PER.Set.simple &MTU_MEMTEST0_Addr %Long &MTU_MEMTEST0|0xA0 ; MTU_MEMTEST0.CPU1_DMEM_EN, MTU_MEMTEST0.CPU1_PMEM_EN
-    PER.Set.simple &MTU_MEMTEST1_Addr %Long &MTU_MEMTEST1|0x08 ; MTU_MEMTEST1.CPU1_DMEM_EN
-    GOSUB InitRAM_ByMTU "D:0xF0061500" ; CPU1_DMEM
-    GOSUB InitRAM_ByMTU "D:0xF0063300" ; CPU1_DMEM
-    GOSUB InitRAM_ByMTU "D:0xF0061700" ; CPU1_PMEM
-  )
-  ELSE IF (CORE.LOGICALTOPHYSICAL(CORE())==2)
-  (
-    ; enable SSH and init DSPR and PSPR
-    PER.Set.simple &MTU_MEMTEST0_Addr %Long &MTU_MEMTEST0|0x1400 ; MTU_MEMTEST0.CPU2_DMEM_EN, MTU_MEMTEST0.CPU2_PMEM_EN
-    GOSUB InitRAM_ByMTU "D:0xF0061A00" ; CPU2_DMEM
-    GOSUB InitRAM_ByMTU "D:0xF0061C00" ; CPU2_PMEM
-  )
-  ELSE IF (CORE.LOGICALTOPHYSICAL(CORE())==3)
-  (
-    ; enable SSH and init DSPR and PSPR
-    PER.Set.simple &MTU_MEMTEST0_Addr %Long &MTU_MEMTEST0|0x28000 ; MTU_MEMTEST0.CPU3_DMEM_EN, MTU_MEMTEST0.CPU3_PMEM_EN
-    GOSUB InitRAM_ByMTU "D:0xF0061F00" ; CPU3_DMEM
-    GOSUB InitRAM_ByMTU "D:0xF0062100" ; CPU3_PMEM
   )
 
   ; restore MTU_MEMTEST0, MTU_MEMTEST1 and MTU_CLC
@@ -1078,24 +1040,7 @@ PreChk_BmhdsOne:
   )
 
   ; check for errata
-  ; Errata BROM_TC.010
-  ; Uncorrectable ECC Error during Evaluation of Alternate Boot Mode Headers
-  ; affected steps: AA
-  IF (&CHREV==0x00)&&(&bmi_hwcfg==0y110)
-  (
-    GOSUB PreChk_GetEx "LONG" "C:&stad"
-    RETURNVALUES &y
-    IF ("&y"=="?")
-      GOSUB PreChk_Error "ABMHD_ERASE" "&name must not point to errased ABMHD (errata BROM_TC.010)"
-  )
-  ; Errata BROM_TC.011
-  ; Use of ABM with PFLASHx banks (x>0)
-  ; affected steps: AA, AB, AC
-  IF (0x00<=&CHREV)&&(&CHREV<=0x02)&&(&bmi_hwcfg==0y110)
-  (
-    IF ((0x80300000<=&stad)&&(&stad<=0x8FFFFFFF))||((0xA0300000<=&stad)&&(&stad<=0xAFFFFFFF))
-      GOSUB PreChk_RequestConfirmation "WABMHD_PFLASH0" "ABMHD (at 0x&(stad)) shall not be outside PFLASH0 (errata BROM_TC.011)"
-  )
+  ; no errata known for this chip
 
   RETURN "VALID" "&stad"
 )
