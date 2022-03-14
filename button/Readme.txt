@@ -23,3 +23,4 @@ V8.1 	Critical bug is fixed.
 V12.0 	Aurix2G support.(TC39X)
 V13.0 	Aurix2G support.(TC38x)
 V14.0 	GTM suspend support
+V15.0 	Bugfix, Aurix2G support.(TC36x...)

@@ -1,4 +1,7 @@
 B::
+IF SYS.mode()==0xB
+(
+)
 SYSTEM.DOWN
 LOCAL &portTC0 &portGTM &addressTC0 &addressGTM
 GOSUB setup_intercom
@@ -149,7 +152,7 @@ ELSE
 
 DIALOG
 (
-	HEADER "SMART Reprogram V14.0"
+	HEADER "SMART Reprogram V15.0"
 	
 	POS 0. 0. 33. 3.
 	BOX "MCU type select"
@@ -689,7 +692,60 @@ END_PROCESS2_SUB:
 	)
 	ELSE IF ("&GENERATION"=="TC3")
 	(
-		IF ("&CPU_TYPE_MID_PROCESS2"=="TC38")
+		IF ("&CPU_TYPE_MID_PROCESS2"=="TC33")
+		(
+			IF "&CORE_SELECTED_PROCESS2"=="SINGLE"
+			(
+				Core.assign  1.
+			)
+		)
+		ELSE IF ("&CPU_TYPE_MID_PROCESS2"=="TC36")
+		(
+			IF "&CORE_SELECTED_PROCESS2"=="SINGLE"
+			(
+				Core.assign  1.
+			)
+			ELSE IF "&CORE_SELECTED_PROCESS2"=="DOUBLE"
+			(
+				
+				Core.assign  1. 2.
+				IF &MULTI_CORE_WINDOW_PROCESS2==TRUE()
+				(
+					d.l /core 0
+					d.l /core 1
+				)
+				
+			)
+		)
+		ELSE IF ("&CPU_TYPE_MID_PROCESS2"=="TC37"||"&CPU_TYPE_MID_PROCESS2"=="TC35")
+		(
+			IF "&CORE_SELECTED_PROCESS2"=="SINGLE"
+			(
+				Core.assign  1.
+			)
+			ELSE IF "&CORE_SELECTED_PROCESS2"=="DOUBLE"
+			(
+				
+				Core.assign  1. 2.
+				IF &MULTI_CORE_WINDOW_PROCESS2==TRUE()
+				(
+					d.l /core 0
+					d.l /core 1
+				)
+				
+			)
+			ELSE IF "&CORE_SELECTED_PROCESS2"=="TRIPLE"
+			(
+				Core.assign  1. 2. 3.
+				IF &MULTI_CORE_WINDOW_PROCESS2==TRUE()
+				(
+					d.l /core 0
+					d.l /core 1
+					d.l /core 2
+				)
+			)
+		)
+		ELSE IF ("&CPU_TYPE_MID_PROCESS2"=="TC38")
 		(
 			IF "&CORE_SELECTED_PROCESS2"=="SINGLE"
 			(

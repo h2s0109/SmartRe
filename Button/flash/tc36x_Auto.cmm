@@ -156,8 +156,8 @@ IF SYStem.MODE()<5.
 
   IF "&param_cpu"!=""
     SYStem.CPU &param_cpu
-  IF !CPUIS(TC37*)
-    SYStem.CPU TC37*
+  IF !CPUIS(TC36*)
+    SYStem.CPU TC36*
 
   CORE.select 0.  ; CPU0 is selected for flash programming.
   SYStem.Up

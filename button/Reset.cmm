@@ -1,3 +1,7 @@
 b::
+IF SYS.mode()==0xB
+(
+
+)
 Sys.d
 Sys.u

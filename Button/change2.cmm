@@ -58,7 +58,7 @@ ENTRY &CONNECT_TYPE_LAST_CHANGE &CPU_TYPE_TEMP_CHANGE &PATH_SELECTED_CHANGE1 &PA
 //-----------------------		PATH_SELECT		-----------------------	
 		POS 1. 0. 11.
 		LINE "PATH_SELECT"
-		HEADER "SMART Reprogram V13.0-HanSungsu"
+		HEADER "SMART Reprogram V15.0-HanSungsu"
 		POS 1. 1. 6.
 		PATH_CHECK.1: CHOOSEBOX "PATH_1"
 		(
@@ -636,7 +636,60 @@ END_PROCESS2_SUB:
 	)
 	ELSE IF ("&GENERATION"=="TC3")
 	(
-		IF ("&CPU_TYPE_MID_PROCESS2"=="TC38")
+		IF ("&CPU_TYPE_MID_PROCESS2"=="TC33")
+		(
+			IF "&CORE_SELECTED_PROCESS2"=="SINGLE"
+			(
+				Core.assign  1.
+			)
+		)
+		ELSE IF ("&CPU_TYPE_MID_PROCESS2"=="TC36")
+		(
+			IF "&CORE_SELECTED_PROCESS2"=="SINGLE"
+			(
+				Core.assign  1.
+			)
+			ELSE IF "&CORE_SELECTED_PROCESS2"=="DOUBLE"
+			(
+				
+				Core.assign  1. 2.
+				IF &MULTI_CORE_WINDOW_PROCESS2==TRUE()
+				(
+					d.l /core 0
+					d.l /core 1
+				)
+				
+			)
+		)
+		ELSE IF ("&CPU_TYPE_MID_PROCESS2"=="TC37"||"&CPU_TYPE_MID_PROCESS2"=="TC35")
+		(
+			IF "&CORE_SELECTED_PROCESS2"=="SINGLE"
+			(
+				Core.assign  1.
+			)
+			ELSE IF "&CORE_SELECTED_PROCESS2"=="DOUBLE"
+			(
+				
+				Core.assign  1. 2.
+				IF &MULTI_CORE_WINDOW_PROCESS2==TRUE()
+				(
+					d.l /core 0
+					d.l /core 1
+				)
+				
+			)
+			ELSE IF "&CORE_SELECTED_PROCESS2"=="TRIPLE"
+			(
+				Core.assign  1. 2. 3.
+				IF &MULTI_CORE_WINDOW_PROCESS2==TRUE()
+				(
+					d.l /core 0
+					d.l /core 1
+					d.l /core 2
+				)
+			)
+		)
+		ELSE IF ("&CPU_TYPE_MID_PROCESS2"=="TC38")
 		(
 			IF "&CORE_SELECTED_PROCESS2"=="SINGLE"
 			(
@@ -739,7 +792,6 @@ END_PROCESS2_SUB:
 				)
 			)
 		)
-
 	)
 
 	IF "&MODE_T"=="COMPLEX"
@@ -985,6 +1037,26 @@ PATH_HANDLE_SUB:
 	(
 		PRINT "hello29x"
 		&ELF_PATH_CORE="ELF_PATH_TC29x_BOOT"
+	)
+	ELSE IF "&CPU_TYPE_PATH_HANDLE"=="TC33x"
+	(
+		PRINT "hello33x"
+		&ELF_PATH_CORE="ELF_PATH_TC33x_BOOT"
+	)
+	ELSE IF "&CPU_TYPE_PATH_HANDLE"=="TC35x"
+	(
+		PRINT "hello35x"
+		&ELF_PATH_CORE="ELF_PATH_TC35x_BOOT"
+	)	
+	ELSE IF "&CPU_TYPE_PATH_HANDLE"=="TC36x"
+	(
+		PRINT "hello36x"
+		&ELF_PATH_CORE="ELF_PATH_TC36x_BOOT"
+	)
+	ELSE IF "&CPU_TYPE_PATH_HANDLE"=="TC37x"
+	(
+		PRINT "hello37x"
+		&ELF_PATH_CORE="ELF_PATH_TC37x_BOOT"
 	)
 	ELSE IF "&CPU_TYPE_PATH_HANDLE"=="TC38x"
 	(
